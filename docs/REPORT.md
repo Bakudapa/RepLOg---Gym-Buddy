@@ -271,19 +271,19 @@ Cakupan test (`tests/`):
 
 Tanggal: 30 Oktober 2026. Dasar: `docs/PRD-app.md` v2.0 (menambah dan mengubah `docs/PRD.md` v1.1). Fase A1–A11 (PRD-app bagian 14) dikerjakan berurutan, masing-masing dengan commit sendiri.
 
-| Commit            | Fase                                    |
-| ----------------- | --------------------------------------- |
-| `9a37f38`         | A1 — Database (`0002_app.sql`)          |
-| `3e72b57`         | A2 — Auth pengguna                      |
-| `4a03203`         | A3 — Pencatatan latihan + rest timer    |
-| `eb61cbb`         | A4 — Ringkasan sesi + PR                |
-| `0c54a18`         | A5 — Riwayat                            |
-| `06b6605`         | A6 — Progres exercise                   |
-| `8cd05df`         | A7 — Dashboard + navigasi               |
-| `aa65019`         | A8 — Pengaturan akun                    |
-| `3ae3d85`         | A9 — Akun demo                          |
-| `02e9e6e`         | A10 — Landing + admin, waitlist dihapus |
-| (commit terakhir) | A11 — Polishing, README, laporan ini    |
+| Commit    | Fase                                    |
+| --------- | --------------------------------------- |
+| `9a37f38` | A1 — Database (`0002_app.sql`)          |
+| `3e72b57` | A2 — Auth pengguna                      |
+| `4a03203` | A3 — Pencatatan latihan + rest timer    |
+| `eb61cbb` | A4 — Ringkasan sesi + PR                |
+| `0c54a18` | A5 — Riwayat                            |
+| `06b6605` | A6 — Progres exercise                   |
+| `8cd05df` | A7 — Dashboard + navigasi               |
+| `aa65019` | A8 — Pengaturan akun                    |
+| `3ae3d85` | A9 — Akun demo                          |
+| `02e9e6e` | A10 — Landing + admin, waitlist dihapus |
+| `6c66db8` | A11 — Polishing, README, laporan ini    |
 
 ## v2.1 Ringkasan per fase
 
