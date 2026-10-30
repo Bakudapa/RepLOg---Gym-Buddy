@@ -8,6 +8,7 @@ import { Footer } from "@/components/landing/footer";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { Navbar } from "@/components/landing/navbar";
+import { RevealObserver } from "@/components/landing/reveal-observer";
 import { WaitlistSection } from "@/components/landing/waitlist-section";
 
 export default function Home() {
@@ -33,6 +34,7 @@ export default function Home() {
         <FeedbackCta />
       </main>
       <Footer />
+      <RevealObserver />
     </>
   );
 }

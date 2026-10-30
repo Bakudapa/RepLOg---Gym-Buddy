@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
+import { ThemeSwitcher, ThemeToggle } from "@/components/ui/theme-toggle";
 
 const links = [
   { href: "#features", label: "Features" },
@@ -67,7 +68,8 @@ export function Navbar() {
               </a>
             </li>
           </ul>
-          <a href="#waitlist" className={buttonClass("primary", "ml-2 text-sm")}>
+          <ThemeToggle />
+          <a href="#waitlist" className={buttonClass("primary", "ml-1 text-sm")}>
             Join the waitlist
           </a>
         </div>
@@ -112,7 +114,8 @@ export function Navbar() {
             </a>
           </li>
         </ul>
-        <div className="container-page flex flex-col gap-3 border-t border-line py-4">
+        <div className="container-page flex flex-col gap-4 border-t border-line py-4">
+          <ThemeSwitcher />
           <a
             href="#waitlist"
             className={buttonClass("primary", "w-full")}
