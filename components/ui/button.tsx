@@ -1,13 +1,18 @@
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+/**
+ * primary: accent colour, reserved for the main CTA ("Join the waitlist") per NFR8.
+ * solid: neutral filled button for other primary actions (calculate, send, sign in).
+ */
+export type ButtonVariant = "primary" | "solid" | "secondary" | "ghost";
 
 const base =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-base font-medium transition-colors duration-200 ease-standard disabled:cursor-not-allowed disabled:opacity-60";
 
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-fg hover:bg-accent-hover",
+  solid: "bg-fg text-bg hover:bg-fg/85",
   secondary: "border border-line-strong bg-transparent text-fg hover:bg-surface",
   ghost: "bg-transparent text-fg hover:bg-surface",
 };

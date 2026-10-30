@@ -424,6 +424,7 @@ export function FeedbackModal({ open, onClose }: FeedbackModalProps) {
 
             <Button
               type="submit"
+              variant="solid"
               disabled={status === "loading"}
               className="w-full md:w-auto md:self-end"
             >

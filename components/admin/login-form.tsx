@@ -55,7 +55,7 @@ export function LoginForm() {
       <div role="alert">
         <FieldError id={errorId} message={state.error} />
       </div>
-      <Button type="submit" disabled={pending} className="w-full">
+      <Button type="submit" variant="solid" disabled={pending} className="w-full">
         {pending ? (
           <LoaderCircle
             aria-hidden

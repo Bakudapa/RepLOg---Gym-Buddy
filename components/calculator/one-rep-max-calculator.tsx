@@ -67,73 +67,76 @@ export function OneRepMaxCalculator() {
   }
 
   return (
-    <div className="grid gap-12 md:grid-cols-2 md:gap-10 lg:gap-16">
-      <div className="flex flex-col gap-12">
-        <form
-          noValidate
-          onSubmit={onSubmit}
-          aria-label="1RM calculator"
-          className="flex flex-col gap-6"
-        >
-          <Field id={ids.exercise} label="Exercise" error={visibleError("exercise")}>
-            <ExerciseCombobox
-              id={ids.exercise}
-              value={values.exercise}
-              onChange={(value) => set("exercise", value)}
-              onBlur={() => values.exercise !== "" && touch("exercise")}
-              invalid={Boolean(visibleError("exercise"))}
-              describedBy={describedBy(ids.exercise, visibleError("exercise"))}
+    <div className="grid gap-12 md:grid-cols-2 md:grid-rows-[auto_1fr] md:gap-x-10 lg:gap-x-16">
+      <form
+        noValidate
+        onSubmit={onSubmit}
+        aria-label="1RM calculator"
+        className="flex flex-col gap-6"
+      >
+        <Field id={ids.exercise} label="Exercise" error={visibleError("exercise")}>
+          <ExerciseCombobox
+            id={ids.exercise}
+            value={values.exercise}
+            onChange={(value) => set("exercise", value)}
+            onBlur={() => values.exercise !== "" && touch("exercise")}
+            invalid={Boolean(visibleError("exercise"))}
+            describedBy={describedBy(ids.exercise, visibleError("exercise"))}
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field
+            id={ids.weight}
+            label="Weight (kg)"
+            hint="1–500, steps of 0.5"
+            error={visibleError("weight")}
+          >
+            <input
+              id={ids.weight}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              enterKeyHint="next"
+              className={`${inputClass(Boolean(visibleError("weight")))} num`}
+              value={values.weight}
+              aria-invalid={Boolean(visibleError("weight")) || undefined}
+              aria-describedby={describedBy(ids.weight, visibleError("weight"), true)}
+              onChange={(event) => set("weight", event.target.value)}
+              onBlur={() => touch("weight")}
             />
           </Field>
+          <Field id={ids.reps} label="Reps" hint="1–12" error={visibleError("reps")}>
+            <input
+              id={ids.reps}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="off"
+              enterKeyHint="done"
+              className={`${inputClass(Boolean(visibleError("reps")))} num`}
+              value={values.reps}
+              aria-invalid={Boolean(visibleError("reps")) || undefined}
+              aria-describedby={describedBy(ids.reps, visibleError("reps"), true)}
+              onChange={(event) => set("reps", event.target.value)}
+              onBlur={() => touch("reps")}
+            />
+          </Field>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field
-              id={ids.weight}
-              label="Weight (kg)"
-              hint="1–500, steps of 0.5"
-              error={visibleError("weight")}
-            >
-              <input
-                id={ids.weight}
-                type="text"
-                inputMode="decimal"
-                autoComplete="off"
-                enterKeyHint="next"
-                className={`${inputClass(Boolean(visibleError("weight")))} num`}
-                value={values.weight}
-                aria-invalid={Boolean(visibleError("weight")) || undefined}
-                aria-describedby={describedBy(ids.weight, visibleError("weight"), true)}
-                onChange={(event) => set("weight", event.target.value)}
-                onBlur={() => touch("weight")}
-              />
-            </Field>
-            <Field id={ids.reps} label="Reps" hint="1–12" error={visibleError("reps")}>
-              <input
-                id={ids.reps}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="off"
-                enterKeyHint="done"
-                className={`${inputClass(Boolean(visibleError("reps")))} num`}
-                value={values.reps}
-                aria-invalid={Boolean(visibleError("reps")) || undefined}
-                aria-describedby={describedBy(ids.reps, visibleError("reps"), true)}
-                onChange={(event) => set("reps", event.target.value)}
-                onBlur={() => touch("reps")}
-              />
-            </Field>
-          </div>
+        <Button
+          type="submit"
+          variant="solid"
+          disabled={!parsed.success}
+          className="w-full md:w-auto md:self-start"
+        >
+          Calculate 1RM
+        </Button>
+      </form>
 
-          <Button
-            type="submit"
-            disabled={!parsed.success}
-            className="w-full md:w-auto md:self-start"
-          >
-            Calculate 1RM
-          </Button>
-        </form>
+      <ResultPanel result={result} />
 
+      <div className="md:col-start-1">
         <HistoryList
           entries={history.entries}
           onSelect={loadEntry}
@@ -141,8 +144,6 @@ export function OneRepMaxCalculator() {
           onClear={history.clear}
         />
       </div>
-
-      <ResultPanel result={result} />
     </div>
   );
 }
@@ -151,7 +152,7 @@ function ResultPanel({ result }: { result: Result | null }) {
   return (
     <div
       aria-live="polite"
-      className="md:row-start-1 md:col-start-2 md:border-l md:border-line md:pl-10 lg:pl-16"
+      className="md:col-start-2 md:row-span-2 md:row-start-1 md:border-l md:border-line md:pl-10 lg:pl-16"
     >
       {result ? (
         <>
