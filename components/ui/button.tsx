@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -17,7 +17,7 @@ export function buttonClass(variant: ButtonVariant = "primary", className?: stri
   return cn(base, variants[variant], className);
 }
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant };
+type ButtonProps = ComponentProps<"button"> & { variant?: ButtonVariant };
 
 export function Button({
   variant = "primary",

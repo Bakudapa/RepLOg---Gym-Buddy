@@ -19,6 +19,7 @@
   --accent: #c2410c;
   --accent-hover: #a8380a;
   --accent-fg: #ffffff;
+  --overlay: rgb(17 17 17 / 0.45);
 }
 
 .dark {
@@ -32,6 +33,7 @@
   --accent: #e8590c;
   --accent-hover: #f2702a;
   --accent-fg: #0f0f0f;
+  --overlay: rgb(0 0 0 / 0.65);
 }
 
 @theme {
@@ -77,6 +79,7 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-fg: var(--accent-fg);
+  --color-overlay: var(--overlay);
 
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
@@ -155,6 +158,30 @@
         opacity 250ms var(--ease-standard),
         transform 250ms var(--ease-standard);
     }
+  }
+}
+
+/* Modal entrance: fade + 8px slide, 200ms (NFR8). */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.modal[open] {
+    animation: dialog-in 200ms var(--ease-standard);
+  }
+
+  dialog.modal[open]::backdrop {
+    animation: backdrop-in 200ms var(--ease-standard);
   }
 }
 

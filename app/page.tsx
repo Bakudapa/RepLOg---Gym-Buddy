@@ -1,5 +1,7 @@
 import { CalculatorSection } from "@/components/calculator/calculator-section";
 import { OneRepMaxCalculator } from "@/components/calculator/one-rep-max-calculator";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { FeedbackProvider } from "@/components/feedback/feedback-context";
 import { Comparison } from "@/components/landing/comparison";
 import { Faq } from "@/components/landing/faq";
 import { FeedbackCta } from "@/components/landing/feedback-cta";
@@ -23,29 +25,31 @@ export default async function Home() {
 
   return (
     <WaitlistCountProvider initialCount={count}>
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-fg focus:px-4 focus:py-3 focus:text-bg"
-      >
-        Skip to content
-      </a>
-      <Navbar />
-      <main id="main">
-        <Hero counter={<WaitlistCounter />} />
-        <Features />
-        <HowItWorks />
-        <CalculatorSection>
-          <OneRepMaxCalculator />
-        </CalculatorSection>
-        <Comparison />
-        <Faq />
-        <WaitlistSection>
-          <WaitlistForm />
-        </WaitlistSection>
-        <FeedbackCta />
-      </main>
-      <Footer />
-      <RevealObserver />
+      <FeedbackProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-fg focus:px-4 focus:py-3 focus:text-bg"
+        >
+          Skip to content
+        </a>
+        <Navbar />
+        <main id="main">
+          <Hero counter={<WaitlistCounter />} />
+          <Features />
+          <HowItWorks />
+          <CalculatorSection>
+            <OneRepMaxCalculator />
+          </CalculatorSection>
+          <Comparison />
+          <Faq />
+          <WaitlistSection>
+            <WaitlistForm />
+          </WaitlistSection>
+          <FeedbackCta action={<FeedbackButton />} />
+        </main>
+        <Footer />
+        <RevealObserver />
+      </FeedbackProvider>
     </WaitlistCountProvider>
   );
 }

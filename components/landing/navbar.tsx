@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
+import { useFeedback } from "@/components/feedback/feedback-context";
 import { ThemeSwitcher, ThemeToggle } from "@/components/ui/theme-toggle";
 
 const links = [
@@ -18,6 +19,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const { openFeedback } = useFeedback();
 
   const close = useCallback((restoreFocus: boolean) => {
     setOpen(false);
@@ -63,9 +65,13 @@ export function Navbar() {
               </li>
             ))}
             <li>
-              <a href="#feedback" className={`${linkClass} text-sm`}>
+              <button
+                type="button"
+                className={`${linkClass} text-sm`}
+                onClick={(event) => openFeedback(event.currentTarget)}
+              >
                 Feedback
-              </a>
+              </button>
             </li>
           </ul>
           <ThemeToggle />
@@ -105,13 +111,17 @@ export function Navbar() {
             </li>
           ))}
           <li>
-            <a
-              href="#feedback"
+            <button
+              type="button"
               className={`${linkClass} w-full text-base`}
-              onClick={() => close(false)}
+              onClick={() => {
+                close(false);
+                // The menu item disappears with the panel, so focus returns to the menu button.
+                openFeedback(toggleRef.current);
+              }}
             >
               Feedback
-            </a>
+            </button>
           </li>
         </ul>
         <div className="container-page flex flex-col gap-4 border-t border-line py-4">
