@@ -93,7 +93,24 @@ describe("checkRateLimit", () => {
       feedback: { limit: 3, windowSeconds: 600 },
       "admin-login": { limit: 5, windowSeconds: 900 },
       "admin-read": { limit: 60, windowSeconds: 60 },
+      signup: { limit: 5, windowSeconds: 3600 },
+      login: { limit: 10, windowSeconds: 900 },
+      "forgot-password": { limit: 3, windowSeconds: 3600 },
+      "demo-login": { limit: 20, windowSeconds: 3600 },
+      "app-write": { limit: 120, windowSeconds: 60 },
+      "delete-account": { limit: 3, windowSeconds: 3600 },
     });
+  });
+});
+
+describe("userIdentifier", () => {
+  it("keys signed-in actions on the user id, not the IP", async () => {
+    const { userIdentifier } = await import("@/lib/rate-limit");
+    const id = "11111111-1111-1111-1111-111111111111";
+    expect(userIdentifier(id)).toBe(`user:${id}`);
+    expect(
+      rateLimitKey("app-write", await hashIp(userIdentifier(id), "s")),
+    ).not.toContain(id);
   });
 });
 

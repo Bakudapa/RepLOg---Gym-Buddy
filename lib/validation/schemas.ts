@@ -55,6 +55,101 @@ export const loginSchema = z.object({
     .max(128, { error: "Invalid email or password." }),
 });
 
+// --- v2.0: accounts and workout logging (PRD-app section 7) ---
+
+const displayNameField = z
+  .string({ error: "Enter a display name." })
+  .trim()
+  .min(1, { error: "Enter a display name." })
+  .max(40, { error: "Use 40 characters or fewer." });
+
+const newPasswordField = z
+  .string({ error: "Enter a password." })
+  .min(8, { error: "Use at least 8 characters." })
+  .max(72, { error: "Use 72 characters or fewer." });
+
+const confirmPasswordField = z.string({ error: "Confirm your password." });
+const passwordsMatch = {
+  error: "Passwords do not match.",
+  path: ["confirmPassword"],
+};
+
+export const signUpSchema = z
+  .object({
+    displayName: displayNameField,
+    email: emailField,
+    password: newPasswordField,
+    confirmPassword: confirmPasswordField,
+  })
+  .refine((value) => value.password === value.confirmPassword, passwordsMatch);
+
+export const forgotPasswordSchema = z.object({ email: emailField });
+
+export const resetPasswordSchema = z
+  .object({ password: newPasswordField, confirmPassword: confirmPasswordField })
+  .refine((value) => value.password === value.confirmPassword, passwordsMatch);
+
+const sessionNameField = z
+  .string({ error: "Enter a workout name." })
+  .trim()
+  .min(1, { error: "Enter a workout name." })
+  .max(60, { error: "Use 60 characters or fewer." });
+
+export const startSessionSchema = z.object({
+  // Optional: blank means "use the default name".
+  name: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    sessionNameField.optional(),
+  ),
+});
+
+export const updateSessionSchema = z.object({
+  name: sessionNameField,
+  notes: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(500, { error: "Keep notes under 500 characters." }).optional(),
+  ),
+});
+
+export const setSchema = z.object({
+  exerciseName: z
+    .string({ error: "Choose or type an exercise." })
+    .trim()
+    .min(1, { error: "Choose or type an exercise." })
+    .max(40, { error: "Use 40 characters or fewer." }),
+  weightKg: z
+    .number({ error: "Enter a weight from 0 to 1000 kg." })
+    .min(0, { error: "Enter a weight from 0 to 1000 kg." })
+    .max(1000, { error: "Enter a weight from 0 to 1000 kg." })
+    .multipleOf(0.5, { error: "Use steps of 0.5 kg." }),
+  reps: z
+    .number({ error: "Enter whole reps from 1 to 100." })
+    .int({ error: "Enter whole reps from 1 to 100." })
+    .min(1, { error: "Enter whole reps from 1 to 100." })
+    .max(100, { error: "Enter whole reps from 1 to 100." }),
+});
+
+export const displayNameSchema = z.object({ displayName: displayNameField });
+
+export const deleteAccountSchema = z.object({
+  password: z
+    .string({ error: "Enter your password." })
+    .min(1, { error: "Enter your password." })
+    .max(72, { error: "Enter your password." }),
+});
+
+export const PROGRESS_RANGES = ["4w", "12w", "all"] as const;
+export const progressRangeSchema = z.object({
+  range: z.enum(PROGRESS_RANGES).catch("12w").default("12w"),
+});
+
+/** Ids from the URL. Anything else is a 404. */
+export const uuidSchema = z.uuid();
+
+export type SignUpInput = z.infer<typeof signUpSchema>;
+export type SetInput = z.infer<typeof setSchema>;
+export type ProgressRange = (typeof PROGRESS_RANGES)[number];
+
 export type WaitlistInput = z.infer<typeof waitlistSchema>;
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
 export type AdminListQuery = z.infer<typeof adminListQuerySchema>;

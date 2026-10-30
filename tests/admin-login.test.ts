@@ -73,7 +73,7 @@ describe("login action", () => {
       error: null,
     });
     const result = await login({}, form("admin@example.com", "x"));
-    expect(result.error).toBe("Too many login attempts. Please try again in 10 minutes.");
+    expect(result.error).toBe("Too many attempts. Please try again in 10 minutes.");
     expect(signInWithPassword).not.toHaveBeenCalled();
     expect(service.rpc).toHaveBeenCalledWith(
       "check_rate_limit",

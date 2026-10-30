@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LoginForm } from "@/components/admin/login-form";
+import { AdminLoginForm } from "@/components/auth/forms";
 
 export const metadata: Metadata = {
   title: "Admin sign in · RepLog",
@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
           Accounts are created by the project owner. There is no sign-up.
         </p>
         <div className="mt-8">
-          <LoginForm />
+          <AdminLoginForm />
         </div>
       </div>
     </main>
