@@ -10,8 +10,9 @@ import type { Database } from "./types";
  * Create one per request.
  */
 export async function createSupabaseServerClient() {
-  const env = getPublicEnv();
+  // Read cookies first: this marks the route as dynamic even if env validation throws.
   const cookieStore = await cookies();
+  const env = getPublicEnv();
 
   return createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,

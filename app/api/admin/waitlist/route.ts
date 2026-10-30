@@ -1,0 +1,32 @@
+import { handleAdminListRequest, PAGE_SIZE, pageRange } from "@/lib/api/admin-list";
+import { errorResponse, jsonResponse } from "@/lib/http";
+
+export async function GET(request: Request) {
+  const result = await handleAdminListRequest(request);
+  if (!result.ok) return result.response;
+
+  const { page } = result.query;
+  const { from, to } = pageRange(page);
+
+  // Session client (not service role): RLS only returns rows to admins.
+  const { data, count, error } = await result.admin.supabase
+    .from("waitlist")
+    .select("id, email, created_at", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  // PostgREST answers PGRST103 when the page is past the end: return an empty page.
+  if (error?.code === "PGRST103") {
+    const countQuery = result.admin.supabase
+      .from("waitlist")
+      .select("id", { count: "exact", head: true });
+    const { count: total } = await countQuery;
+    return jsonResponse({ data: [], page, pageSize: PAGE_SIZE, total: total ?? 0 });
+  }
+  if (error) {
+    console.error("[admin/waitlist] query failed:", error.code);
+    return errorResponse("INTERNAL_ERROR");
+  }
+
+  return jsonResponse({ data: data ?? [], page, pageSize: PAGE_SIZE, total: count ?? 0 });
+}
