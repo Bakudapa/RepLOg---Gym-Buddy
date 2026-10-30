@@ -18,3 +18,12 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
+
+  database:
+    # Runs both migrations and the SQL assertions (RLS, demo read-only, PR detection,
+    # limits) on a throwaway Postgres container. Never touches Supabase.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - run: bash supabase/tests/run-local.sh
