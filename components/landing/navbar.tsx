@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { useFeedback } from "@/components/feedback/feedback-context";
@@ -13,7 +14,7 @@ const links = [
 ];
 
 const linkClass =
-  "inline-flex min-h-11 items-center rounded-md px-3 font-medium text-fg transition-colors duration-200 hover:bg-surface";
+  "inline-flex min-h-11 items-center rounded-md px-2 font-medium text-fg transition-colors duration-200 hover:bg-surface lg:px-3";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -75,9 +76,12 @@ export function Navbar() {
             </li>
           </ul>
           <ThemeToggle />
-          <a href="#waitlist" className={buttonClass("primary", "ml-1 text-sm")}>
-            Join the waitlist
-          </a>
+          <Link href="/login" className={`${linkClass} text-sm`}>
+            Log in
+          </Link>
+          <Link href="/signup" className={buttonClass("primary", "ml-1 text-sm")}>
+            Get started
+          </Link>
         </div>
 
         <button
@@ -126,13 +130,12 @@ export function Navbar() {
         </ul>
         <div className="container-page flex flex-col gap-4 border-t border-line py-4">
           <ThemeSwitcher />
-          <a
-            href="#waitlist"
-            className={buttonClass("primary", "w-full")}
-            onClick={() => close(false)}
-          >
-            Join the waitlist
-          </a>
+          <Link href="/signup" className={buttonClass("primary", "w-full")}>
+            Get started
+          </Link>
+          <Link href="/login" className={buttonClass("secondary", "w-full")}>
+            Log in
+          </Link>
         </div>
       </div>
     </header>

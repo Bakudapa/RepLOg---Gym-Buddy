@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 /**
- * primary: accent colour, reserved for the main CTA ("Join the waitlist") per NFR8.
+ * primary: accent colour, reserved for the main CTA ("Get started") per NFR8.
  * solid: neutral filled button for other primary actions (calculate, send, sign in).
  */
 export type ButtonVariant = "primary" | "solid" | "secondary" | "ghost";

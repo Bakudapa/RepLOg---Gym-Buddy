@@ -37,8 +37,8 @@ describe("hashIp / rateLimitKey", () => {
     const b = await hashIp("203.0.113.7", "salt-b");
     expect(a).not.toBe(b);
     expect(a).toMatch(/^[0-9a-f]{64}$/);
-    expect(rateLimitKey("waitlist", a)).toBe(`waitlist:${a}`);
-    expect(rateLimitKey("waitlist", a)).not.toContain("203.0.113.7");
+    expect(rateLimitKey("login", a)).toBe(`login:${a}`);
+    expect(rateLimitKey("login", a)).not.toContain("203.0.113.7");
   });
 });
 
@@ -68,7 +68,7 @@ describe("checkRateLimit", () => {
       data: [{ allowed: false, retry_after_seconds: 120 }],
       error: null,
     });
-    expect(await checkRateLimit(client as never, "waitlist", "1.1.1.1", "s")).toEqual({
+    expect(await checkRateLimit(client as never, "login", "1.1.1.1", "s")).toEqual({
       allowed: false,
       retryAfterSeconds: 120,
     });
@@ -82,14 +82,13 @@ describe("checkRateLimit", () => {
     ];
     for (const client of failing) {
       await expect(
-        checkRateLimit(client as never, "waitlist", "1.1.1.1", "s"),
+        checkRateLimit(client as never, "login", "1.1.1.1", "s"),
       ).rejects.toBeInstanceOf(RateLimitUnavailableError);
     }
   });
 
   it("matches the PRD limits", () => {
     expect(RATE_LIMITS).toEqual({
-      waitlist: { limit: 5, windowSeconds: 3600 },
       feedback: { limit: 3, windowSeconds: 600 },
       "admin-login": { limit: 5, windowSeconds: 900 },
       "admin-read": { limit: 60, windowSeconds: 60 },

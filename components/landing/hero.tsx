@@ -1,5 +1,7 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { buttonClass } from "@/components/ui/button";
+import { DemoButton } from "./demo-button";
 import { PhoneMockup } from "./phone-mockup";
 
 export function Hero({ counter }: { counter?: ReactNode }) {
@@ -15,15 +17,13 @@ export function Hero({ counter }: { counter?: ReactNode }) {
           </h1>
           <p className="mt-6 max-w-xl text-lg text-muted">
             Write down each set in a couple of taps. RepLog keeps your history, spots new
-            personal records, and shows how every lift moves over time.
+            personal records, and charts how every lift moves over time.
           </p>
-          <div className="mt-8 flex flex-col gap-3 md:flex-row">
-            <a href="#waitlist" className={buttonClass("primary")}>
-              Join the waitlist
-            </a>
-            <a href="#calculator" className={buttonClass("secondary")}>
-              Try the 1RM calculator
-            </a>
+          <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-start">
+            <Link href="/signup" className={buttonClass("primary")}>
+              Get started — it&apos;s free
+            </Link>
+            <DemoButton />
           </div>
           {counter ? <div className="mt-6">{counter}</div> : null}
         </div>

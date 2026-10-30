@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
 export type RateLimitAction =
-  | "waitlist"
   | "feedback"
   | "admin-login"
   | "admin-read"
@@ -18,7 +17,6 @@ export const RATE_LIMITS: Record<
   RateLimitAction,
   { limit: number; windowSeconds: number }
 > = {
-  waitlist: { limit: 5, windowSeconds: 60 * 60 },
   feedback: { limit: 3, windowSeconds: 10 * 60 },
   "admin-login": { limit: 5, windowSeconds: 15 * 60 },
   "admin-read": { limit: 60, windowSeconds: 60 },

@@ -2,7 +2,6 @@ import type { FieldErrors } from "@/lib/validation/schemas";
 
 export type ErrorCode =
   | "VALIDATION_ERROR"
-  | "ALREADY_REGISTERED"
   | "RATE_LIMITED"
   | "UNAUTHORIZED"
   | "FORBIDDEN"
@@ -17,7 +16,6 @@ export type ErrorBody = {
 
 const defaultMessages: Record<ErrorCode, string> = {
   VALIDATION_ERROR: "Some fields are invalid.",
-  ALREADY_REGISTERED: "You're already on the list.",
   RATE_LIMITED: "Too many requests. Please try again later.",
   UNAUTHORIZED: "You need to sign in.",
   FORBIDDEN: "You don't have access to this resource.",
@@ -29,7 +27,6 @@ const defaultMessages: Record<ErrorCode, string> = {
 
 const statusFor: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
-  ALREADY_REGISTERED: 409,
   RATE_LIMITED: 429,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,

@@ -2,16 +2,16 @@ import { Section, SectionHeader } from "@/components/ui/section";
 
 const steps = [
   {
-    title: "Pick a program",
-    description: "Choose a template or build your own split, day by day.",
+    title: "Start a workout",
+    description: "Give it a name or keep the default. One tap and you're logging.",
   },
   {
-    title: "Log your training",
-    description: "Record each set as you go. The rest timer runs between sets.",
+    title: "Log your sets",
+    description: "Record each set as you go. The rest timer starts between sets.",
   },
   {
     title: "See your progress",
-    description: "Charts and personal records update after every session.",
+    description: "History, charts, and personal records update after every set.",
   },
 ];
 

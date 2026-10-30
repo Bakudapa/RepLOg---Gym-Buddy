@@ -4,22 +4,27 @@ export const faqItems: FaqItem[] = [
   {
     question: "Why is it free?",
     answer:
-      "A training log doesn't need a subscription. RepLog keeps your data on your device first, so it costs very little to run. There is no paid tier and no ads.",
+      "RepLog is a portfolio project by one developer. It costs very little to run, so there is no paid tier and no ads.",
   },
   {
     question: "What do you do with my email?",
     answer:
-      "We use it for one thing: telling you when RepLog launches. No newsletters, and we never share or sell it. Send us a note through Feedback if you want it removed.",
+      "It is your login: we use it to confirm your account and to send password reset links. No newsletters, and we never share or sell it.",
   },
   {
     question: "When does it launch?",
     answer:
-      "There is no fixed date yet. Everyone on the waitlist hears about it first, the day it is ready.",
+      "It's live. Create an account and log your next workout, or try the demo first.",
   },
   {
     question: "Does it work offline?",
     answer:
-      "Yes. Logging, the rest timer, and your history all work without a connection. Changes sync once you are back online.",
+      "No. RepLog saves each set to your account as you log it, so it needs an internet connection.",
+  },
+  {
+    question: "Can I try it without signing up?",
+    answer:
+      "Yes. Try the demo opens a read-only account with six weeks of sample training, so you can see the history, charts, and records.",
   },
   {
     question: "Can I suggest a feature?",
@@ -28,7 +33,11 @@ export const faqItems: FaqItem[] = [
   },
   {
     question: "Does it use kilograms or pounds?",
+    answer: "Kilograms only, for both the app and the 1RM calculator on this page.",
+  },
+  {
+    question: "Can I delete my data?",
     answer:
-      "Kilograms at launch, which is also what the 1RM calculator on this page uses. Pounds are planned.",
+      "Yes. Settings → Delete account removes your account and every workout and set, right away.",
   },
 ];

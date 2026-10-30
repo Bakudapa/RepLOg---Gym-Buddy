@@ -12,7 +12,6 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => userClient.client,
 }));
 
-const waitlistRoute = await import("@/app/api/admin/waitlist/route");
 const feedbackRoute = await import("@/app/api/admin/feedback/route");
 
 const admin = { id: "11111111-1111-1111-1111-111111111111" };
@@ -33,31 +32,23 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
-describe("GET /api/admin/waitlist", () => {
-  it("401 without a session", async () => {
-    userClient = createUserClientMock({ user: null });
-    const response = await waitlistRoute.GET(get("/api/admin/waitlist"));
-    expect(response.status).toBe(401);
-    expect((await response.json()).error.code).toBe("UNAUTHORIZED");
-  });
-
-  it("403 for a signed-in non-admin", async () => {
-    userClient = createUserClientMock({ user: admin, isAdmin: false });
-    const response = await waitlistRoute.GET(get("/api/admin/waitlist"));
-    expect(response.status).toBe(403);
-    expect((await response.json()).error.code).toBe("FORBIDDEN");
-  });
-
+describe("GET /api/admin/feedback", () => {
   it("200 for an admin, newest first, 20 per page, read with the session client", async () => {
     const rows = [
-      { id: "a", email: "a@example.com", created_at: "2026-10-30T07:00:00Z" },
+      {
+        id: "a",
+        category: "bug",
+        message: "It broke",
+        email: null,
+        created_at: "2026-10-30T07:00:00Z",
+      },
     ];
     userClient = createUserClientMock({
       user: admin,
       isAdmin: true,
       list: { data: rows, error: null, count: 41 },
     });
-    const response = await waitlistRoute.GET(get("/api/admin/waitlist?page=3"));
+    const response = await feedbackRoute.GET(get("/api/admin/feedback?page=3"));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       data: rows,
@@ -66,12 +57,12 @@ describe("GET /api/admin/waitlist", () => {
       total: 41,
     });
     expect(userClient.calls).toContainEqual({
-      table: "waitlist",
+      table: "feedback",
       method: "order",
       args: ["created_at", { ascending: false }],
     });
     expect(userClient.calls).toContainEqual({
-      table: "waitlist",
+      table: "feedback",
       method: "range",
       args: [40, 59],
     });
@@ -81,8 +72,8 @@ describe("GET /api/admin/waitlist", () => {
 
   it("400 for an invalid page", async () => {
     userClient = createUserClientMock({ user: admin, isAdmin: true });
-    expect((await waitlistRoute.GET(get("/api/admin/waitlist?page=0"))).status).toBe(400);
-    expect((await waitlistRoute.GET(get("/api/admin/waitlist?page=abc"))).status).toBe(
+    expect((await feedbackRoute.GET(get("/api/admin/feedback?page=0"))).status).toBe(400);
+    expect((await feedbackRoute.GET(get("/api/admin/feedback?page=abc"))).status).toBe(
       400,
     );
   });
@@ -92,7 +83,7 @@ describe("GET /api/admin/waitlist", () => {
       data: [{ allowed: false, retry_after_seconds: 30 }],
       error: null,
     });
-    const response = await waitlistRoute.GET(get("/api/admin/waitlist"));
+    const response = await feedbackRoute.GET(get("/api/admin/feedback"));
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("30");
     expect(service.rpc).toHaveBeenCalledWith(
@@ -100,10 +91,8 @@ describe("GET /api/admin/waitlist", () => {
       expect.objectContaining({ p_limit: 60, p_window_seconds: 60 }),
     );
   });
-});
 
-describe("GET /api/admin/feedback", () => {
-  it("401 / 403 like the waitlist endpoint", async () => {
+  it("401 without a session, 403 for a non-admin", async () => {
     userClient = createUserClientMock({ user: null });
     expect((await feedbackRoute.GET(get("/api/admin/feedback"))).status).toBe(401);
     userClient = createUserClientMock({ user: admin, isAdmin: false });

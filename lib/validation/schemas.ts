@@ -17,11 +17,6 @@ const emailField = z
 /** Honeypot: real users never see it, so any value means a bot. */
 const honeypotField = z.string().max(1000).optional();
 
-export const waitlistSchema = z.object({
-  email: emailField,
-  website: honeypotField,
-});
-
 export const feedbackSchema = z.object({
   category: z.enum(FEEDBACK_CATEGORIES, { error: "Choose a category." }),
   message: z
@@ -155,7 +150,6 @@ export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SetInput = z.infer<typeof setSchema>;
 export type ProgressRange = (typeof PROGRESS_RANGES)[number];
 
-export type WaitlistInput = z.infer<typeof waitlistSchema>;
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
 export type AdminListQuery = z.infer<typeof adminListQuerySchema>;
 

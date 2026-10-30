@@ -9,8 +9,7 @@ const rows: Array<{ label: string; values: [Cell, Cell, Cell, Cell] }> = [
   { label: "Automatic progress charts", values: [true, false, "Manual", false] },
   { label: "Rest timer", values: [true, false, false, false] },
   { label: "PR detection", values: [true, false, "Formulas", false] },
-  { label: "Program templates", values: [true, false, "Manual", false] },
-  { label: "Works offline", values: [true, true, "Depends", true] },
+  { label: "Workout history", values: [true, "Scroll back", true, "Flip back"] },
   { label: "Free", values: [true, true, true, true] },
 ];
 

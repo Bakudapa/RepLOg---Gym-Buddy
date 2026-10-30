@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  deleteAccountSchema,
+  displayNameSchema,
+  progressRangeSchema,
+  resetPasswordSchema,
+  setSchema,
+  signUpSchema,
+  startSessionSchema,
+  updateSessionSchema,
+  uuidSchema,
   adminListQuerySchema,
   pageQuerySchema,
   feedbackSchema,
+  forgotPasswordSchema,
   fieldErrors,
   loginSchema,
   oneRepMaxSchema,
-  waitlistSchema,
 } from "@/lib/validation/schemas";
 
 describe("oneRepMaxSchema", () => {
@@ -44,14 +53,10 @@ describe("oneRepMaxSchema", () => {
   });
 });
 
-describe("waitlistSchema", () => {
+describe("email field (shared by sign up, forgot password, feedback)", () => {
   it("trims and lowercases the email", () => {
-    const result = waitlistSchema.parse({ email: "  Lifter@Example.COM  ", website: "" });
+    const result = forgotPasswordSchema.parse({ email: "  Lifter@Example.COM  " });
     expect(result.email).toBe("lifter@example.com");
-  });
-
-  it("allows the honeypot to be absent", () => {
-    expect(waitlistSchema.safeParse({ email: "a@example.com" }).success).toBe(true);
   });
 
   it.each([
@@ -62,16 +67,13 @@ describe("waitlistSchema", () => {
     "a b@example.com",
     `${"a".repeat(250)}@x.co`,
   ])("rejects %j", (email) => {
-    const result = waitlistSchema.safeParse({ email });
+    const result = forgotPasswordSchema.safeParse({ email });
     expect(result.success).toBe(false);
     if (!result.success) expect(fieldErrors(result.error).email).toBeDefined();
   });
 
-  it("rejects a missing email and non-string honeypot", () => {
-    expect(waitlistSchema.safeParse({}).success).toBe(false);
-    expect(waitlistSchema.safeParse({ email: "a@example.com", website: 1 }).success).toBe(
-      false,
-    );
+  it("rejects a missing email", () => {
+    expect(forgotPasswordSchema.safeParse({}).success).toBe(false);
   });
 });
 
@@ -162,5 +164,124 @@ describe("pageQuerySchema", () => {
     expect(pageQuerySchema.parse({ page: "4" })).toEqual({ page: 4 });
     expect(pageQuerySchema.parse({ page: "-2" })).toEqual({ page: 1 });
     expect(pageQuerySchema.parse({ page: ["2", "3"] })).toEqual({ page: 1 });
+  });
+});
+
+describe("signUpSchema / resetPasswordSchema", () => {
+  const valid = {
+    displayName: " Dafa ",
+    email: "D@Example.com",
+    password: "12345678",
+    confirmPassword: "12345678",
+  };
+
+  it("accepts and normalizes valid input", () => {
+    expect(signUpSchema.parse(valid)).toMatchObject({
+      displayName: "Dafa",
+      email: "d@example.com",
+    });
+  });
+
+  it.each([
+    [{ password: "1234567", confirmPassword: "1234567" }, "password"],
+    [{ password: "x".repeat(73), confirmPassword: "x".repeat(73) }, "password"],
+    [{ confirmPassword: "different" }, "confirmPassword"],
+    [{ displayName: "   " }, "displayName"],
+    [{ displayName: "x".repeat(41) }, "displayName"],
+  ])("rejects %j", (patch, field) => {
+    const result = signUpSchema.safeParse({ ...valid, ...patch });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(fieldErrors(result.error)).toHaveProperty(field);
+  });
+
+  it("checks the confirmation when resetting", () => {
+    expect(
+      resetPasswordSchema.safeParse({ password: "abcdefgh", confirmPassword: "abcdefgh" })
+        .success,
+    ).toBe(true);
+    expect(
+      resetPasswordSchema.safeParse({ password: "abcdefgh", confirmPassword: "abcdefgX" })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("setSchema", () => {
+  it("accepts bodyweight (0 kg) and the limits", () => {
+    expect(
+      setSchema.safeParse({ exerciseName: "Pull-Up", weightKg: 0, reps: 12 }).success,
+    ).toBe(true);
+    expect(
+      setSchema.safeParse({ exerciseName: "Leg Press", weightKg: 1000, reps: 100 })
+        .success,
+    ).toBe(true);
+  });
+
+  it.each([
+    [{ exerciseName: "" }, "exerciseName"],
+    [{ exerciseName: "x".repeat(41) }, "exerciseName"],
+    [{ weightKg: -0.5 }, "weightKg"],
+    [{ weightKg: 1000.5 }, "weightKg"],
+    [{ weightKg: 62.25 }, "weightKg"],
+    [{ reps: 0 }, "reps"],
+    [{ reps: 101 }, "reps"],
+    [{ reps: 8.5 }, "reps"],
+  ])("rejects %j", (patch, field) => {
+    const result = setSchema.safeParse({
+      exerciseName: "Squat",
+      weightKg: 100,
+      reps: 5,
+      ...patch,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(Object.keys(fieldErrors(result.error))).toEqual([field]);
+  });
+});
+
+describe("session schemas", () => {
+  it("treats a blank start name as no name", () => {
+    expect(startSessionSchema.parse({ name: "  " })).toEqual({ name: undefined });
+    expect(startSessionSchema.parse({ name: " Push " })).toEqual({ name: "Push" });
+    expect(startSessionSchema.safeParse({ name: "x".repeat(61) }).success).toBe(false);
+  });
+
+  it("requires a name and limits notes to 500 characters", () => {
+    expect(updateSessionSchema.safeParse({ name: "", notes: "" }).success).toBe(false);
+    expect(updateSessionSchema.parse({ name: "Legs", notes: "  " })).toEqual({
+      name: "Legs",
+      notes: undefined,
+    });
+    expect(
+      updateSessionSchema.safeParse({ name: "Legs", notes: "x".repeat(501) }).success,
+    ).toBe(false);
+  });
+});
+
+describe("account schemas", () => {
+  it("validates the display name and the delete password", () => {
+    expect(displayNameSchema.safeParse({ displayName: "A" }).success).toBe(true);
+    expect(displayNameSchema.safeParse({ displayName: "" }).success).toBe(false);
+    expect(deleteAccountSchema.safeParse({ password: "" }).success).toBe(false);
+    expect(deleteAccountSchema.safeParse({ password: "x".repeat(73) }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("progressRangeSchema / uuidSchema", () => {
+  it("defaults the range to 12 weeks", () => {
+    expect(progressRangeSchema.parse({})).toEqual({ range: "12w" });
+    expect(progressRangeSchema.parse({ range: "4w" })).toEqual({ range: "4w" });
+    expect(progressRangeSchema.parse({ range: "1y" })).toEqual({ range: "12w" });
+  });
+
+  it("accepts only UUIDs as ids", () => {
+    expect(uuidSchema.safeParse("22222222-2222-4222-8222-222222222222").success).toBe(
+      true,
+    );
+    expect(uuidSchema.safeParse("123").success).toBe(false);
+    expect(uuidSchema.safeParse("22222222-2222-4222-8222-22222222222'").success).toBe(
+      false,
+    );
   });
 });

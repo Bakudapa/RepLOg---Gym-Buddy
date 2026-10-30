@@ -20,7 +20,7 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "RepLog: a free gym log for sets, reps, and weight",
   description:
-    "RepLog is a free gym log. Record sets, reps, and weight, track personal records, and estimate your one-rep max.",
+    "RepLog is a free gym log. Record sets, reps, and weight, see your workout history and progress charts, and get automatic personal records.",
 };
 
 export const viewport: Viewport = {

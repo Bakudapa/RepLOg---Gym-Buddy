@@ -8,12 +8,6 @@ export type FeedbackCategory = "feature" | "critique" | "bug";
 export type Database = {
   public: {
     Tables: {
-      waitlist: {
-        Row: { id: string; email: string; created_at: string };
-        Insert: { id?: string; email: string; created_at?: string };
-        Update: { id?: string; email?: string; created_at?: string };
-        Relationships: [];
-      };
       feedback: {
         Row: {
           id: string;
@@ -151,7 +145,6 @@ export type Database = {
     };
     Functions: {
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
-      get_waitlist_count: { Args: Record<PropertyKey, never>; Returns: number };
       is_demo: { Args: Record<PropertyKey, never>; Returns: boolean };
       get_total_sets_logged: { Args: Record<PropertyKey, never>; Returns: number };
       get_admin_stats: {
