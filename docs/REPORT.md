@@ -12,7 +12,7 @@ Tanggal: 30 Oktober 2026. Semua fase (0–8) di PRD bagian 16 sudah dikerjakan. 
 | `84d281f`         | 5 — Waitlist                |
 | `1bcb632`         | 6 — Feedback                |
 | `d322df1`         | 7 — Admin                   |
-| (commit terakhir) | 8 — Polishing + laporan ini |
+| `969a328` | 8 — Polishing + laporan ini |
 
 ---
 
