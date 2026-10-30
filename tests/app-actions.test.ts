@@ -3,10 +3,18 @@ import { createAppClientMock } from "./helpers/mock-app-client";
 import { createServiceMock } from "./helpers/mock-supabase";
 
 const service = createServiceMock();
+const deleteUser = vi.fn();
+const verifySignIn = vi.fn();
 let app = createAppClientMock({ user: null });
 
 vi.mock("@/lib/supabase/service", () => ({
-  createSupabaseServiceClient: () => service.client,
+  createSupabaseServiceClient: () => ({
+    ...service.client,
+    auth: { admin: { deleteUser } },
+  }),
+}));
+vi.mock("@/lib/supabase/public", () => ({
+  createSupabasePublicClient: () => ({ auth: { signInWithPassword: verifySignIn } }),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => app.client,
@@ -323,5 +331,93 @@ describe("updateSession / deleteSession", () => {
   it("is blocked for the demo account", async () => {
     app = createAppClientMock({ user: USER, profile: demo });
     expect(await actions.deleteSession(SESSION)).toMatchObject({ status: 403 });
+  });
+});
+
+describe("updateDisplayName", () => {
+  it("is blocked for the demo account", async () => {
+    app = createAppClientMock({ user: USER, profile: demo });
+    expect(await actions.updateDisplayName("New")).toMatchObject({ status: 403 });
+  });
+
+  it("validates 1–40 characters", async () => {
+    app = createAppClientMock({ user: USER, profile: regular });
+    expect(await actions.updateDisplayName("   ")).toMatchObject({ status: 400 });
+    expect(await actions.updateDisplayName("x".repeat(41))).toMatchObject({
+      status: 400,
+    });
+  });
+
+  it("updates only the signed-in user's profile", async () => {
+    app = createAppClientMock({ user: USER, profile: regular });
+    // profiles is answered by the mock's profile row
+    expect(await actions.updateDisplayName("  Dafa ")).toEqual({
+      ok: true,
+      data: undefined,
+    });
+    expect(app.calls).toContainEqual({
+      table: "profiles",
+      method: "update",
+      args: [{ display_name: "Dafa" }],
+    });
+    expect(app.calls).toContainEqual({
+      table: "profiles",
+      method: "eq",
+      args: ["id", USER.id],
+    });
+  });
+});
+
+describe("deleteAccount", () => {
+  beforeEach(() => {
+    deleteUser.mockReset().mockResolvedValue({ error: null });
+    verifySignIn
+      .mockReset()
+      .mockResolvedValue({ data: { user: { id: USER.id } }, error: null });
+  });
+
+  it("401 without a session and 403 for the demo account", async () => {
+    app = createAppClientMock({ user: null });
+    expect(await actions.deleteAccount("pw")).toMatchObject({ status: 401 });
+    app = createAppClientMock({ user: USER, profile: demo });
+    expect(await actions.deleteAccount("pw")).toMatchObject({ status: 403 });
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("rejects a wrong password without deleting", async () => {
+    app = createAppClientMock({ user: USER, profile: regular });
+    verifySignIn.mockResolvedValue({
+      data: { user: null },
+      error: { code: "invalid_credentials" },
+    });
+    expect(await actions.deleteAccount("wrong")).toMatchObject({
+      status: 400,
+      error: "Incorrect password.",
+    });
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("verifies the password, deletes with the service role, signs out, and redirects", async () => {
+    app = createAppClientMock({ user: USER, profile: regular });
+    await expect(actions.deleteAccount("correct")).rejects.toThrow(
+      "REDIRECT:/?account=deleted",
+    );
+    expect(verifySignIn).toHaveBeenCalledWith({ email: USER.email, password: "correct" });
+    expect(deleteUser).toHaveBeenCalledWith(USER.id);
+    expect(app.client.auth.signOut).toHaveBeenCalled();
+  });
+
+  it("uses its own limit (3 per hour per user)", async () => {
+    app = createAppClientMock({ user: USER, profile: regular });
+    service.rpc.mockResolvedValue({
+      data: [{ allowed: false, retry_after_seconds: 600 }],
+      error: null,
+    });
+    expect(await actions.deleteAccount("pw")).toMatchObject({ status: 429 });
+    expect(service.rpc.mock.calls[0][1]).toMatchObject({
+      p_limit: 3,
+      p_window_seconds: 3600,
+    });
+    expect(service.rpc.mock.calls[0][1].p_key).toMatch(/^delete-account:/);
   });
 });

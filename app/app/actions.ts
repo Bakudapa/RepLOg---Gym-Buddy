@@ -6,8 +6,12 @@ import { redirect } from "next/navigation";
 import { limitAction } from "@/lib/auth/action-rate-limit";
 import { requireUser, type UserProfile } from "@/lib/auth/require-user";
 import { userIdentifier } from "@/lib/rate-limit";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import type { Database } from "@/lib/supabase/types";
 import {
+  deleteAccountSchema,
+  displayNameSchema,
   fieldErrors,
   setSchema,
   startSessionSchema,
@@ -293,4 +297,88 @@ export async function deleteSession(sessionId: string): Promise<ActionResult> {
 
   revalidatePath("/app", "layout");
   redirect("/app/history");
+}
+
+/** FR29: change the display name. Blocked for the demo account (UI and RLS). */
+export async function updateDisplayName(displayName: string): Promise<ActionResult> {
+  const guard = await withWriter();
+  if (!guard.ok) return guard;
+  const parsed = displayNameSchema.safeParse({ displayName });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Check the display name.",
+      fields: fieldErrors(parsed.error),
+    };
+  }
+
+  const { data, error } = await guard.ctx.supabase
+    .from("profiles")
+    .update({ display_name: parsed.data.displayName })
+    .eq("id", guard.ctx.user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return dbFailure(error, "update-display-name");
+  if (!data) return notFound;
+
+  revalidatePath("/app", "layout");
+  return { ok: true, data: undefined };
+}
+
+/**
+ * FR29: delete the account after re-entering the password. The password is checked
+ * with a throwaway client (no cookies); the user is then deleted with the service
+ * role, and every profile, workout, and set goes with it (on delete cascade).
+ */
+export async function deleteAccount(password: string): Promise<ActionResult> {
+  const session = await requireUser();
+  if (!session.ok) return { ok: false, status: 401, error: "Please log in again." };
+  if (session.profile.isDemo) return { ok: false, status: 403, error: DEMO_READ_ONLY };
+
+  const limit = await limitAction("delete-account", userIdentifier(session.user.id));
+  if (!limit.ok) return { ok: false, status: limit.status, error: limit.message };
+
+  const parsed = deleteAccountSchema.safeParse({ password });
+  if (!parsed.success || !session.user.email) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Enter your password.",
+      fields: { password: "Enter your password." },
+    };
+  }
+
+  try {
+    const verify = await createSupabasePublicClient().auth.signInWithPassword({
+      email: session.user.email,
+      password: parsed.data.password,
+    });
+    if (verify.error || verify.data.user?.id !== session.user.id) {
+      return {
+        ok: false,
+        status: 400,
+        error: "Incorrect password.",
+        fields: { password: "Incorrect password." },
+      };
+    }
+    const { error } = await createSupabaseServiceClient().auth.admin.deleteUser(
+      session.user.id,
+    );
+    if (error) throw error;
+  } catch {
+    console.error("[delete-account] failed");
+    return {
+      ok: false,
+      status: 500,
+      error: "Could not delete the account. Please try again.",
+    };
+  }
+
+  try {
+    await session.supabase.auth.signOut();
+  } catch {
+    // The user no longer exists; clearing the cookies is best effort.
+  }
+  redirect("/?account=deleted");
 }

@@ -2,6 +2,8 @@ import { CalculatorSection } from "@/components/calculator/calculator-section";
 import { OneRepMaxCalculator } from "@/components/calculator/one-rep-max-calculator";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { FeedbackProvider } from "@/components/feedback/feedback-context";
+import { Suspense } from "react";
+import { AccountDeletedNotice } from "@/components/landing/account-deleted-notice";
 import { Comparison } from "@/components/landing/comparison";
 import { Faq } from "@/components/landing/faq";
 import { FeedbackCta } from "@/components/landing/feedback-cta";
@@ -33,6 +35,10 @@ export default async function Home() {
           Skip to content
         </a>
         <Navbar />
+        {/* Reads the query string on the client, so the page itself stays static. */}
+        <Suspense fallback={null}>
+          <AccountDeletedNotice />
+        </Suspense>
         <main id="main">
           <Hero counter={<WaitlistCounter />} />
           <Features />
