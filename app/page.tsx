@@ -9,11 +9,20 @@ import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { Navbar } from "@/components/landing/navbar";
 import { RevealObserver } from "@/components/landing/reveal-observer";
+import { WaitlistCountProvider } from "@/components/landing/waitlist-context";
+import { WaitlistCounter } from "@/components/landing/waitlist-counter";
+import { WaitlistForm } from "@/components/landing/waitlist-form";
 import { WaitlistSection } from "@/components/landing/waitlist-section";
+import { getWaitlistCount } from "@/lib/waitlist-count";
 
-export default function Home() {
+// Counter is refreshed at most once a minute (FR11).
+export const revalidate = 60;
+
+export default async function Home() {
+  const count = await getWaitlistCount();
+
   return (
-    <>
+    <WaitlistCountProvider initialCount={count}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-fg focus:px-4 focus:py-3 focus:text-bg"
@@ -22,7 +31,7 @@ export default function Home() {
       </a>
       <Navbar />
       <main id="main">
-        <Hero />
+        <Hero counter={<WaitlistCounter />} />
         <Features />
         <HowItWorks />
         <CalculatorSection>
@@ -30,11 +39,13 @@ export default function Home() {
         </CalculatorSection>
         <Comparison />
         <Faq />
-        <WaitlistSection />
+        <WaitlistSection>
+          <WaitlistForm />
+        </WaitlistSection>
         <FeedbackCta />
       </main>
       <Footer />
       <RevealObserver />
-    </>
+    </WaitlistCountProvider>
   );
 }
