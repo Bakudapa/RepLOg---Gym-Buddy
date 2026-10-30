@@ -246,3 +246,38 @@ describe("GET /auth/callback", () => {
     expect(cookieJar.get("replog_recovery")).toBe("1");
   });
 });
+
+describe("demoLogin", () => {
+  it("signs in with the server-side demo credentials and opens the app", async () => {
+    vi.stubEnv("DEMO_USER_EMAIL", "demo@replog.test");
+    vi.stubEnv("DEMO_USER_PASSWORD", "demo-secret");
+    await expect(actions.demoLogin()).rejects.toThrow("REDIRECT:/app");
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({
+      email: "demo@replog.test",
+      password: "demo-secret",
+    });
+  });
+
+  it("explains when the demo is not configured, without leaking why", async () => {
+    vi.stubEnv("DEMO_USER_EMAIL", "");
+    vi.stubEnv("DEMO_USER_PASSWORD", "");
+    const result = await actions.demoLogin();
+    expect(result.error).toBe(
+      "The demo isn't available right now. Please try again later.",
+    );
+    expect(auth.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("is rate limited at 20 per hour per IP", async () => {
+    service.rpc.mockResolvedValue({
+      data: [{ allowed: false, retry_after_seconds: 900 }],
+      error: null,
+    });
+    const result = await actions.demoLogin();
+    expect(result.error).toMatch(/Too many attempts/);
+    expect(service.rpc).toHaveBeenCalledWith(
+      "check_rate_limit",
+      expect.objectContaining({ p_limit: 20, p_window_seconds: 3600 }),
+    );
+  });
+});

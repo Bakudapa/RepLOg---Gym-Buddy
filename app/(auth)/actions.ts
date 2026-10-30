@@ -7,6 +7,7 @@ import { getRequestIp } from "@/lib/auth/client-ip";
 import { RECOVERY_COOKIE, type AuthFormState } from "@/lib/auth/form-state";
 import { requireUser } from "@/lib/auth/require-user";
 import { getSiteUrl } from "@/lib/env";
+import { getDemoCredentials } from "@/lib/env.server";
 import { safeRedirect } from "@/lib/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -172,4 +173,30 @@ export async function logOut(): Promise<void> {
     // Still leave the app even if Supabase is unreachable.
   }
   redirect("/");
+}
+
+/**
+ * FR30: signs in to the read-only demo account with credentials from the server
+ * environment. Used by the "Try the demo" buttons on the landing page.
+ */
+export async function demoLogin(): Promise<AuthFormState> {
+  const limit = await limitAction("demo-login", await getRequestIp());
+  if (!limit.ok) return { error: limit.message };
+
+  let ok = false;
+  try {
+    const { DEMO_USER_EMAIL, DEMO_USER_PASSWORD } = getDemoCredentials();
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: DEMO_USER_EMAIL,
+      password: DEMO_USER_PASSWORD,
+    });
+    ok = !error;
+  } catch {
+    ok = false;
+  }
+  if (!ok)
+    return { error: "The demo isn't available right now. Please try again later." };
+
+  redirect("/app");
 }

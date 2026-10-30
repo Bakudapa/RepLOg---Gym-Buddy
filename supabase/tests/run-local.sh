@@ -15,3 +15,8 @@ psql -h localhost -p "$PORT" -U postgres -At -f supabase/tests/rls-checks.sql
 echo "--- 0002_app.sql"
 psql -h localhost -p "$PORT" -U postgres -q -v ON_ERROR_STOP=1 -f supabase/migrations/0002_app.sql
 psql -h localhost -p "$PORT" -U postgres -q -At -v ON_ERROR_STOP=1 -f supabase/tests/app-checks.sql
+echo "--- seed/demo.sql"
+psql -h localhost -p "$PORT" -U postgres -q -c "insert into auth.users (id, email) values ('d0d0d0d0-0000-4000-8000-000000000001', 'demo@replog.test')"
+sed "s/00000000-0000-0000-0000-000000000000/d0d0d0d0-0000-4000-8000-000000000001/" supabase/seed/demo.sql \
+  | psql -h localhost -p "$PORT" -U postgres -q -v ON_ERROR_STOP=1
+psql -h localhost -p "$PORT" -U postgres -q -At -v ON_ERROR_STOP=1 -f supabase/tests/demo-checks.sql
