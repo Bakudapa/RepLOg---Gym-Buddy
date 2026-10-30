@@ -1,4 +1,5 @@
 import { CalculatorSection } from "@/components/calculator/calculator-section";
+import { OneRepMaxCalculator } from "@/components/calculator/one-rep-max-calculator";
 import { Comparison } from "@/components/landing/comparison";
 import { Faq } from "@/components/landing/faq";
 import { FeedbackCta } from "@/components/landing/feedback-cta";
@@ -23,7 +24,9 @@ export default function Home() {
         <Hero />
         <Features />
         <HowItWorks />
-        <CalculatorSection />
+        <CalculatorSection>
+          <OneRepMaxCalculator />
+        </CalculatorSection>
         <Comparison />
         <Faq />
         <WaitlistSection />
