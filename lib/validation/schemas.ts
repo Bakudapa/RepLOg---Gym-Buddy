@@ -47,6 +47,11 @@ export const adminListQuerySchema = z.object({
   category: z.enum(FEEDBACK_CATEGORIES, { error: "Unknown category." }).optional(),
 });
 
+/** Just the page number, for lists outside the admin area (history). Invalid → page 1. */
+export const pageQuerySchema = z.object({
+  page: adminListQuerySchema.shape.page.catch(1),
+});
+
 export const loginSchema = z.object({
   email: z.email({ error: "Invalid email or password." }),
   password: z

@@ -265,3 +265,63 @@ describe("finishWorkout", () => {
     });
   });
 });
+
+describe("updateSession / deleteSession", () => {
+  it("validates the name and notes", async () => {
+    app = createAppClientMock({ user: USER, profile: regular });
+    const result = await actions.updateSession(SESSION, {
+      name: " ",
+      notes: "x".repeat(501),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok)
+      expect(Object.keys(result.fields ?? {}).sort()).toEqual(["name", "notes"]);
+  });
+
+  it("stores trimmed values and clears empty notes", async () => {
+    app = createAppClientMock({
+      user: USER,
+      profile: regular,
+      results: { workout_sessions: [{ data: { id: SESSION } }] },
+    });
+    expect(
+      await actions.updateSession(SESSION, { name: "  Leg day ", notes: "   " }),
+    ).toEqual({ ok: true, data: undefined });
+    expect(app.calls).toContainEqual({
+      table: "workout_sessions",
+      method: "update",
+      args: [{ name: "Leg day", notes: null }],
+    });
+  });
+
+  it("404 for another user's workout", async () => {
+    app = createAppClientMock({
+      user: USER,
+      profile: regular,
+      results: { workout_sessions: [{ data: null }] },
+    });
+    expect(await actions.updateSession(SESSION, { name: "x" })).toMatchObject({
+      status: 404,
+    });
+    app = createAppClientMock({
+      user: USER,
+      profile: regular,
+      results: { workout_sessions: [{ data: null }] },
+    });
+    expect(await actions.deleteSession(SESSION)).toMatchObject({ status: 404 });
+  });
+
+  it("deletes and returns to the history list", async () => {
+    app = createAppClientMock({
+      user: USER,
+      profile: regular,
+      results: { workout_sessions: [{ data: { id: SESSION } }] },
+    });
+    await expect(actions.deleteSession(SESSION)).rejects.toThrow("REDIRECT:/app/history");
+  });
+
+  it("is blocked for the demo account", async () => {
+    app = createAppClientMock({ user: USER, profile: demo });
+    expect(await actions.deleteSession(SESSION)).toMatchObject({ status: 403 });
+  });
+});

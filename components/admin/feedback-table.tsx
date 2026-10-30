@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 import type { FeedbackCategory } from "@/lib/validation/schemas";
 import { formatDateTime } from "./format";
 import { ListState } from "./list-state";
-import { Pagination } from "./pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { useAdminList } from "./use-admin-list";
 
 type FeedbackRow = {

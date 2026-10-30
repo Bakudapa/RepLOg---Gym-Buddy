@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { formatDateTime } from "./format";
 import { ListState } from "./list-state";
-import { Pagination } from "./pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { useAdminList } from "./use-admin-list";
 
 type WaitlistRow = { id: string; email: string; created_at: string };

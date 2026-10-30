@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   adminListQuerySchema,
+  pageQuerySchema,
   feedbackSchema,
   fieldErrors,
   loginSchema,
@@ -152,5 +153,14 @@ describe("loginSchema", () => {
     { email: "admin@example.com", password: "x".repeat(129) },
   ])("rejects %j", (input) => {
     expect(loginSchema.safeParse(input).success).toBe(false);
+  });
+});
+
+describe("pageQuerySchema", () => {
+  it("falls back to page 1 for anything invalid", () => {
+    expect(pageQuerySchema.parse({})).toEqual({ page: 1 });
+    expect(pageQuerySchema.parse({ page: "4" })).toEqual({ page: 4 });
+    expect(pageQuerySchema.parse({ page: "-2" })).toEqual({ page: 1 });
+    expect(pageQuerySchema.parse({ page: ["2", "3"] })).toEqual({ page: 1 });
   });
 });

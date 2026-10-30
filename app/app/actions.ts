@@ -11,6 +11,7 @@ import {
   fieldErrors,
   setSchema,
   startSessionSchema,
+  updateSessionSchema,
   uuidSchema,
   type SetInput,
 } from "@/lib/validation/schemas";
@@ -241,4 +242,55 @@ export async function finishWorkout(sessionId: string): Promise<ActionResult> {
 
   revalidateWorkout(sessionId);
   redirect(`/app/history/${sessionId}?finished=1`);
+}
+
+/** FR27: rename a workout or change its notes. */
+export async function updateSession(
+  sessionId: string,
+  input: { name: string; notes?: string },
+): Promise<ActionResult> {
+  const guard = await withWriter();
+  if (!guard.ok) return guard;
+  if (!uuidSchema.safeParse(sessionId).success) return notFound;
+  const parsed = updateSessionSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Check the highlighted fields.",
+      fields: fieldErrors(parsed.error),
+    };
+  }
+
+  const { data, error } = await guard.ctx.supabase
+    .from("workout_sessions")
+    .update({ name: parsed.data.name, notes: parsed.data.notes ?? null })
+    .eq("id", sessionId)
+    .select("id")
+    .maybeSingle();
+  if (error) return dbFailure(error, "update-session");
+  if (!data) return notFound;
+
+  revalidateWorkout(sessionId);
+  revalidatePath("/app/history");
+  return { ok: true, data: undefined };
+}
+
+/** FR27: delete a workout and its sets (cascade), then back to the history list. */
+export async function deleteSession(sessionId: string): Promise<ActionResult> {
+  const guard = await withWriter();
+  if (!guard.ok) return guard;
+  if (!uuidSchema.safeParse(sessionId).success) return notFound;
+
+  const { data, error } = await guard.ctx.supabase
+    .from("workout_sessions")
+    .delete()
+    .eq("id", sessionId)
+    .select("id")
+    .maybeSingle();
+  if (error) return dbFailure(error, "delete-session");
+  if (!data) return notFound;
+
+  revalidatePath("/app", "layout");
+  redirect("/app/history");
 }
