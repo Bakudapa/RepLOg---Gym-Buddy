@@ -1,6 +1,6 @@
 "use client";
 
-import { Dumbbell, History, House, LogOut, Settings } from "lucide-react";
+import { Calculator, Dumbbell, History, House, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logOut } from "@/app/(auth)/actions";
@@ -12,6 +12,8 @@ const items = [
   { href: "/app/history", label: "History", Icon: History },
   { href: "/app/exercises", label: "Exercises", Icon: Dumbbell },
   { href: "/app/settings", label: "Settings", Icon: Settings },
+  // The 1RM calculator lives on the public landing page.
+  { href: "/#calculator", label: "1RM", Icon: Calculator },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -87,7 +89,7 @@ export function AppTabBar() {
         aria-label="App"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-5">
           {items.map(({ href, label, Icon }) => {
             const active = isActive(pathname, href);
             return (

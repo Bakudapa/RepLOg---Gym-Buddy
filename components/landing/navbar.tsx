@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { useFeedback } from "@/components/feedback/feedback-context";
 import { ThemeSwitcher, ThemeToggle } from "@/components/ui/theme-toggle";
+import { useSignedIn } from "./use-signed-in";
 
 const links = [
   { href: "#features", label: "Features" },
@@ -21,6 +22,7 @@ export function Navbar() {
   const panelId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const { openFeedback } = useFeedback();
+  const signedIn = useSignedIn();
 
   const close = useCallback((restoreFocus: boolean) => {
     setOpen(false);
@@ -79,12 +81,20 @@ export function Navbar() {
             </li>
           </ul>
           <ThemeToggle />
-          <Link href="/login" className={`${linkClass} min-w-11 justify-center text-sm`}>
-            Log in
-          </Link>
-          <Link href="/signup" className={buttonClass("primary", "ml-1 text-sm")}>
-            Get started
-          </Link>
+          {signedIn ? (
+            <Link href="/app" className={buttonClass("primary", "ml-1 text-sm")}>
+              Open app
+            </Link>
+          ) : (
+            <>
+              <Link href="/login" className={`${linkClass} min-w-11 justify-center text-sm`}>
+                Log in
+              </Link>
+              <Link href="/signup" className={buttonClass("primary", "ml-1 text-sm")}>
+                Get started
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -133,12 +143,20 @@ export function Navbar() {
         </ul>
         <div className="container-page flex flex-col gap-4 border-t border-line py-4">
           <ThemeSwitcher />
-          <Link href="/signup" className={buttonClass("primary", "w-full")}>
-            Get started
-          </Link>
-          <Link href="/login" className={buttonClass("secondary", "w-full")}>
-            Log in
-          </Link>
+          {signedIn ? (
+            <Link href="/app" className={buttonClass("primary", "w-full")}>
+              Open app
+            </Link>
+          ) : (
+            <>
+              <Link href="/signup" className={buttonClass("primary", "w-full")}>
+                Get started
+              </Link>
+              <Link href="/login" className={buttonClass("secondary", "w-full")}>
+                Log in
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
