@@ -11,11 +11,12 @@ export function StatCard({
   unit?: string;
 }) {
   return (
-    <div className="border-t border-line py-4 pr-4">
+    <div className="min-w-0 border-t border-line py-4 pr-2">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className="mt-1">
+      {/* Value and unit may wrap onto two lines in narrow three-column grids. */}
+      <dd className="mt-1 flex flex-wrap items-baseline gap-x-1">
         <span className="num text-xl">{value}</span>
-        {unit ? <span className="ml-1 text-sm text-muted">{unit}</span> : null}
+        {unit ? <span className="text-sm text-muted">{unit}</span> : null}
       </dd>
     </div>
   );

@@ -5,7 +5,10 @@ import { ResetPasswordForm } from "@/components/auth/forms";
 import { RECOVERY_COOKIE } from "@/lib/auth/form-state";
 import { requireUser } from "@/lib/auth/require-user";
 
-export const metadata: Metadata = { title: "Set a new password · RepLog" };
+export const metadata: Metadata = {
+  title: "Set a new password · RepLog",
+  robots: { index: false, follow: false },
+};
 
 /** Only usable with the recovery session that /auth/callback sets up (FR20). */
 export default async function ResetPasswordPage() {

@@ -264,3 +264,281 @@ Cakupan test (`tests/`):
     - Lighthouse mobile di URL Vercel.
     - Cek di iPhone (Safari) dan Android: auto-zoom, keyboard virtual saat combobox dipakai, dan bottom sheet modal.
 15. Isi link demo dan skor Lighthouse dari URL produksi di README.
+
+---
+
+# Laporan v2.0 — RepLog App
+
+Tanggal: 30 Oktober 2026. Dasar: `docs/PRD-app.md` v2.0 (menambah dan mengubah `docs/PRD.md` v1.1). Fase A1–A11 (PRD-app bagian 14) dikerjakan berurutan, masing-masing dengan commit sendiri.
+
+| Commit            | Fase                                    |
+| ----------------- | --------------------------------------- |
+| `9a37f38`         | A1 — Database (`0002_app.sql`)          |
+| `3e72b57`         | A2 — Auth pengguna                      |
+| `4a03203`         | A3 — Pencatatan latihan + rest timer    |
+| `eb61cbb`         | A4 — Ringkasan sesi + PR                |
+| `0c54a18`         | A5 — Riwayat                            |
+| `06b6605`         | A6 — Progres exercise                   |
+| `8cd05df`         | A7 — Dashboard + navigasi               |
+| `aa65019`         | A8 — Pengaturan akun                    |
+| `3ae3d85`         | A9 — Akun demo                          |
+| `02e9e6e`         | A10 — Landing + admin, waitlist dihapus |
+| (commit terakhir) | A11 — Polishing, README, laporan ini    |
+
+## v2.1 Ringkasan per fase
+
+**A1 — Database.** `supabase/migrations/0002_app.sql`:
+
+- Menghapus `waitlist` dan `get_waitlist_count()`.
+- Tabel baru `profiles`, `workout_sessions`, `workout_sets` dengan RLS per user. Semua policy tulis menolak akun demo.
+- Grant per kolom: user tidak bisa menulis `user_id`, `is_demo`, atau timestamp.
+- Trigger: profil otomatis untuk user baru, maksimal 100 set per sesi, maksimal 20 sesi per 24 jam, dan pemilik set harus sama dengan pemilik sesinya.
+- Backfill profil untuk user yang sudah ada sebelum migrasi (misalnya admin).
+- Fungsi `is_demo()`, `get_total_sets_logged()`, dan `get_admin_stats()` (hanya admin, angka agregat saja).
+- Empat view `security_invoker`: `workout_set_records` (estimasi 1RM dan deteksi PR per set), `workout_session_summaries`, `exercise_summaries`, dan `exercise_session_bests`.
+- Divalidasi dengan 54 assertion di Postgres lokal (`supabase/tests/app-checks.sql`).
+
+**A2 — Auth pengguna.**
+
+- Halaman `/signup`, `/login`, `/forgot-password`, `/reset-password`, dan `/auth/error`.
+- Route `/auth/callback` mendukung dua jenis link email: `code` (PKCE) dan `token_hash`.
+- Server Action auth dengan rate limit dan pesan yang tidak membocorkan apakah email terdaftar.
+- Helper baru: `requireUser()`, `safeRedirect()`, dan `routeRedirect()`. `proxy.ts` kini juga melindungi `/app/*`.
+- `AuthForm` dipakai bersama oleh semua form auth, termasuk login admin; form login admin yang lama dihapus.
+- `limitAction()` dipakai bersama oleh semua Server Action. Untuk aksi milik user yang login, rate limit dihitung per user id.
+
+**A3 — Pencatatan latihan.**
+
+- Server Action `startWorkout`, `addSet`, `updateSet`, `deleteSet`, dan `finishWorkout`, semuanya lewat satu guard bersama `withWriter()`.
+- Layar sesi aktif `/app/workout/[id]`:
+  - Set dikelompokkan per exercise dan diberi nomor urut, dengan tanda PR.
+  - Edit inline, dan hapus dengan konfirmasi.
+  - Tambah set memakai optimistic update; jika gagal, set ditandai dengan tombol Retry dan Discard.
+- `ExerciseCombobox` diperluas (bukan dibuat versi kedua):
+  - saran dari exercise yang pernah dicatat user, ditampilkan paling atas;
+  - `onSelect` untuk mengisi beban/reps otomatis;
+  - daftar saran membuka ke atas di HP.
+- `RestTimer`: 60/90/120/180 detik (disimpan di localStorage), ±15 detik, stop, getar, dan bunyi.
+- `ConfirmDialog` dan `LocalTime` (zona waktu perangkat) dibuat generik dan dipakai di banyak halaman.
+- Di HP, form tambah set dan timer menempel di bawah layar.
+
+**A4 — Ringkasan dan PR.**
+
+- Deteksi PR dilakukan di database (view A1).
+- `lib/workout/summary.ts` menyusun ringkasan: durasi, jumlah exercise dan set, volume, dan PR terbaik per exercise per jenis. Set dengan reps > 12 diberi tanda "estimate less reliable".
+- Komponen `SessionSummary` dan `StatCard`.
+- Setelah "Finish", user diarahkan ke `/app/history/[id]?finished=1`.
+- Job CI baru `database` menjalankan semua assertion SQL di Postgres sementara.
+
+**A5 — Riwayat.**
+
+- `/app/history`: 20 per halaman, dengan keadaan kosong.
+- Detail sesi: ubah nama dan catatan, hapus sesi dengan konfirmasi.
+- Sesi milik orang lain menghasilkan 404.
+- `Pagination` dipindah ke `components/ui` dan kini mendukung callback maupun link.
+
+**A6 — Progres.**
+
+- `/app/exercises`: daftar semua exercise yang pernah dicatat.
+- `/app/exercises/[key]`:
+  - grafik garis SVG buatan sendiri yang lebarnya mengikuti kontainer, titik PR berwarna aksen, dan tabel alternatif;
+  - filter 4 minggu / 12 minggu / semua;
+  - daftar PR kedua jenis, 10 set terakhir, dan pesan khusus jika baru ada satu sesi.
+
+**A7 — Dashboard dan navigasi.**
+
+- Dashboard: kartu "Continue workout", statistik minggu ini (mulai Senin, zona waktu perangkat), 5 PR terbaru, 3 sesi terakhir, dan keadaan kosong untuk pengguna baru.
+- Navigasi: tab bar bawah di HP (menghormati safe area), navbar atas di tablet dan desktop.
+- `DemoBanner` untuk akun demo.
+
+**A8 — Pengaturan.**
+
+- Ubah nama tampilan.
+- Hapus akun: password diketik ulang di dalam dialog konfirmasi, diverifikasi dengan klien tanpa cookie, lalu user dihapus dengan `auth.admin.deleteUser` dan semua datanya ikut terhapus lewat cascade. Setelah itu user dikeluarkan dan landing page menampilkan pesan konfirmasi.
+
+**A9 — Demo.**
+
+- Server Action `demoLogin` dan komponen `DemoButton`.
+- `supabase/seed/demo.sql`: 24 sesi, 368 set, 15 exercise, 88 PR. Seed ini idempoten dan tanggalnya relatif terhadap `now()`. Divalidasi oleh `supabase/tests/demo-checks.sql`.
+
+**A10 — Landing page dan admin.**
+
+- Waitlist dihapus bersih: komponen, route, skema, rate limit, tipe, kode error, test, dan tab admin.
+- CTA baru "Get started — it's free" dan "Try the demo".
+- Counter Hero menampilkan total set yang tercatat (hanya pengguna non-demo, disembunyikan jika di bawah 100).
+- Features, Comparison, FAQ, How It Works, dan footer kini jujur (tanpa "Program templates" dan "Works offline").
+- Admin hanya melihat angka agregat dan tab Feedback.
+
+**A11 — Polishing.**
+
+- Pemeriksaan NFR2 otomatis di 8 ukuran layar untuk semua halaman `/app`, landing, dan auth. Perbaikan: kartu statistik meluap 6 px di 360 px, dan tiga target sentuh kurang dari 44 px.
+- Pemeriksaan NFR8 di seluruh kode.
+- Lighthouse.
+- Halaman `/login` dan `/signup` dibuat bisa diindeks, dan `robots.txt` diperbarui.
+- README ditulis ulang dan screenshot diganti.
+
+## v2.2 Keputusan yang saya ambil sendiri karena PRD ambigu
+
+1. **Di mana PR dihitung.** PRD mengizinkan database atau server. Saya pilih database (view `workout_set_records`, `security_invoker`). Alasannya, dashboard butuh "5 PR terbaru" dari seluruh riwayat, dan PostgREST membatasi 1000 baris per request, jadi menghitung di server akan bermasalah. TypeScript hanya merangkum flag PR dari database. Test "set pertama bukan PR, nilai sama bukan PR, lebih tinggi PR" ada di `supabase/tests/app-checks.sql` dan dijalankan oleh job CI `database`.
+2. **Urutan guard Server Action `/app`:** sesi (401) → demo (403) → rate limit → Zod (400) → query. PRD menulis rate limit → Zod → sesi, tetapi rate limit per user id membutuhkan sesi lebih dulu.
+3. **Hasil Server Action** berbentuk `ActionResult` dengan `status` 400/401/403/404/409/429/500/503. Ini meniru kode HTTP agar mudah diuji.
+4. **Nama sesi default** ("Workout — 30 Oct") dibuat di browser supaya tanggalnya sesuai zona waktu perangkat. Jika tidak ada, server memakai tanggal UTC.
+5. **Layar sesi aktif menyembunyikan tab bar** di HP supaya form tambah set bisa menempel di bawah layar. Di tablet dan desktop, form ada di kolom samping yang sticky. Daftar saran combobox membuka ke atas hanya di HP.
+6. **Isian otomatis** memakai set terakhir exercise tersebut: di sesi ini jika ada, kalau tidak dari sesi sebelumnya (diambil dari 500 set terakhir).
+7. **Ringkasan sesi dan detail riwayat adalah halaman yang sama** (`/app/history/[id]`). Setelah "Finish" ditambah `?finished=1` untuk menampilkan "Workout saved." Sesi tanpa set dihapus dan user kembali ke dashboard.
+8. **Statistik minggu ini** hanya menghitung sesi yang sudah selesai. Server mengambil data 8 hari, lalu browser memfilter mulai Senin 00:00 waktu lokal.
+9. **PR di ringkasan:** hanya set terbaik per exercise per jenis yang ditampilkan, supaya tidak ada banyak baris untuk exercise yang sama.
+10. **Latihan bodyweight (0 kg)** tidak pernah menghasilkan PR, karena kedua jenis PR berbasis beban. Ini keterbatasan yang mengikuti definisi FR26.
+11. **Reset password:** callback dengan `type=recovery` memasang cookie httpOnly `replog_recovery` selama 15 menit. `/reset-password` membutuhkan sesi dan cookie tersebut. Tidak ada rate limit tambahan karena link recovery hanya bisa dipakai sekali.
+12. **Sign up:** pesan sukses selalu sama. Pengecualiannya hanya `weak_password` (ditampilkan di field) dan `over_email_send_rate_limit`; keduanya tidak membocorkan apakah email sudah terdaftar.
+13. **`/auth/callback` menerima `code` dan `token_hash`.** Template email default Supabase (PKCE) hanya berfungsi jika link dibuka di browser yang sama. README menjelaskan template `token_hash` agar link bisa dibuka dari perangkat lain.
+14. **Demo belum dikonfigurasi** (env kosong): tombol demo menampilkan pesan umum "The demo isn't available right now." tanpa menjelaskan penyebabnya.
+15. **Teks counter:** "X sets logged by lifters so far". Ambang 100 dicek di server.
+16. **FAQ:** pertanyaan wajib dari PRD v1.1 tetap ada dengan jawaban jujur ("Does it work offline?" → "No…", "When does it launch?" → "It's live…"). Ditambah dua pertanyaan: demo dan hapus data.
+17. **Comparison:** baris "Workout history" dengan nilai "Scroll back" (aplikasi catatan) dan "Flip back" (buku tulis).
+18. **SEO:** `/login` dan `/signup` bisa diindeks karena merupakan halaman masuk publik. `/reset-password`, `/auth/error`, `/app`, dan `/admin` diberi noindex dan masuk daftar disallow di `robots.txt`.
+19. **Dashboard admin** tidak lagi memakai komponen tab, karena hanya tersisa satu tab (Feedback).
+20. **`pageQuerySchema`** diturunkan dari `adminListQuerySchema` (bukan skema kedua). Halaman yang tidak valid jatuh ke halaman 1.
+21. **Segmen URL `[key]`** di halaman progres harus sama persis dengan bentuk ternormalisasi (lowercase, trim). Jika tidak, hasilnya 404.
+22. **Grafik:** sumbu X proporsional terhadap waktu, sehingga jeda antar sesi terlihat. Titik PR memakai warna aksen (diizinkan PRD-app). Tabel alternatif ditaruh di `<details>` yang terlihat, sehingga bisa dipakai semua orang, bukan hanya pembaca layar.
+23. **Seed demo:** 4 sesi per minggu, rotasi Push/Pull/Legs, dan minggu ke-5 dibuat lebih ringan (−10%) supaya grafik tidak lurus sempurna. Tanggal relatif terhadap `now()`, jadi menjalankan ulang seed akan menyegarkan data.
+24. **Tombol "Sign up" di banner demo** memakai warna aksen karena merupakan CTA utama. Tombol aksi lain di `/app` memakai varian netral `solid` sesuai NFR8.
+25. **Uji visual halaman `/app`** dilakukan dengan Supabase tiruan lokal: server HTTP kecil yang meniru Auth dan PostgREST, berisi data contoh. Tujuannya agar halaman yang asli bisa dicek tanpa menyentuh database remote. Kodenya tidak masuk repo.
+
+## v2.3 Penyesuaian terhadap spesifikasi PRD-app
+
+| Spesifikasi                                                      | Penyesuaian                                                                                                                                                                       | Alasan                                                                                               |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Fungsi `security definer` dengan `set search_path = public`      | `set search_path = ''` dan semua nama ditulis lengkap                                                                                                                             | Rekomendasi linter Supabase. Lebih ketat.                                                            |
+| Grant tabel tidak dijelaskan selain `profiles`                   | `revoke all` lalu grant per kolom: insert `(name, notes)` / `(session_id, exercise_name, weight_kg, reps)`, update `(name, notes, ended_at)` / `(exercise_name, weight_kg, reps)` | `user_id` selalu dari `default auth.uid()`. Timestamp dan `is_demo` tidak bisa dipalsukan lewat API. |
+| `auth.uid()` dan `public.is_demo()` dipanggil langsung di policy | `(select auth.uid())` dan `(select public.is_demo())`                                                                                                                             | Dievaluasi sekali per query (rekomendasi Supabase).                                                  |
+| Trigger batas set dan sesi                                       | Fungsi trigger `security definer` dengan kunci: `FOR UPDATE` pada sesi induk dan `pg_advisory_xact_lock` per user                                                                 | Agar batas 100 dan 20 tetap tepat saat ada insert bersamaan.                                         |
+| Konsistensi pemilik "trigger atau policy"                        | Keduanya: policy insert/update memeriksa sesi milik user, dan trigger `enforce_set_rules` memeriksa juga saat `update of session_id, user_id`                                     | Pertahanan berlapis, termasuk untuk insert dengan hak istimewa (seed).                               |
+| Fungsi PR/progres "diserahkan ke implementasi"                   | Empat view `security_invoker = true`                                                                                                                                              | Lihat keputusan 1.                                                                                   |
+| `get_admin_stats()` "angka agregat"                              | `returns table` berisi 7 kolom; feedback per kategori sebagai kolom terpisah; `total_users` = profil non-demo                                                                     | Satu baris mudah dipakai di UI. Profil mencakup semua user setelah backfill.                         |
+| Grant fungsi                                                     | `get_total_sets_logged` dan `is_demo` juga diberikan ke `service_role`; `execute` fungsi trigger dicabut dari semua role API                                                      | Fungsi trigger tidak boleh dipanggil langsung lewat RPC.                                             |
+| Index                                                            | Ditambah `workout_sessions(user_id, created_at)` dan `workout_sets(user_id, performed_at desc)`                                                                                   | Untuk trigger 24 jam, dashboard, dan isian otomatis.                                                 |
+| Profil hanya dibuat oleh trigger                                 | Ditambah backfill untuk `auth.users` yang sudah ada                                                                                                                               | Admin dan akun lama perlu baris profil.                                                              |
+| Struktur `app/admin/layout.tsx` (v1)                             | Tetap memakai route group `(dashboard)` dari v1                                                                                                                                   | Mencegah loop redirect di `/admin/login`.                                                            |
+| `(auth)/layout.tsx`                                              | Tidak ada                                                                                                                                                                         | Tidak dibutuhkan setelah aturan noindex dipindah per halaman.                                        |
+| Kode error `ALREADY_REGISTERED` (PRD v1.1 9.1)                   | Dihapus bersama waitlist                                                                                                                                                          | Hanya dipakai oleh waitlist.                                                                         |
+| Dependency                                                       | Tidak ada dependency baru                                                                                                                                                         | Grafik dibuat sendiri dengan SVG.                                                                    |
+
+## v2.4 Hasil lint, typecheck, test, dan build terakhir
+
+```
+npm run lint          → lolos (0 error, 0 warning)
+npm run format:check  → All matched files use Prettier code style!
+npm run typecheck     → next typegen ✓, tsc --noEmit tanpa error
+npm test              → Test Files 22 passed (22), Tests 241 passed (241)
+npm run build         → ✓ Compiled successfully
+    ○ /  (revalidate 1m)   ○ /signup   ○ /forgot-password   ○ /auth/error   ○ /admin/login
+    ƒ /login   ƒ /reset-password   ƒ /auth/callback
+    ƒ /app   ƒ /app/workout/[id]   ƒ /app/history   ƒ /app/history/[id]
+    ƒ /app/exercises   ƒ /app/exercises/[key]   ƒ /app/settings
+    ƒ /admin   ƒ /api/feedback   ƒ /api/admin/feedback   ƒ Proxy (Middleware)
+bash supabase/tests/run-local.sh → exit 0, 63 assertion PASS
+    (54 app-checks + 9 demo-checks), "ALL APP CHECKS PASSED", "ALL DEMO CHECKS PASSED"
+```
+
+Cakupan test Vitest yang baru:
+
+- Skema v2.0, `safe-redirect`, aturan route proxy.
+- Aksi auth (sign up dengan pesan sama, login, unconfirmed, forgot, reset, demo), `/auth/callback`, dan `requireUser`.
+- Server Action `/app`:
+  - tanpa sesi → 401;
+  - demo → 403;
+  - input tidak valid → 400;
+  - bukan UUID atau milik orang lain → 404;
+  - rate limit per user, batas 100 set, satu sesi aktif, sesi kosong dibuang;
+  - ubah/hapus sesi, ubah nama, hapus akun.
+- `lib/workout` (pengelompokan, volume, ringkasan, grafik, minggu, kunci exercise) dan pencarian exercise dengan riwayat.
+
+**Lighthouse 12, mobile, build produksi lokal:**
+
+- `/`, `/login`, `/signup`: 99 / 100 / 100 / 100.
+- `/app` dan `/app/exercises/[key]`: 99 / 100 / 100. SEO tidak relevan karena halaman noindex. Diukur dengan Supabase tiruan.
+
+**Pemeriksaan di browser** (Brave headless via CDP):
+
+- **NFR2.** Semua halaman `/app` (sesi aktif, dashboard, riwayat, detail, exercise, grafik, pengaturan), landing, dan auth diperiksa di 360×780, 390×844, 844×390, 768×1024, 820×1180, 1024×768, 1180×820, dan 1440×900. Hasilnya: tidak ada scroll horizontal, tidak ada target sentuh di bawah 44 px, tidak ada font input di bawah 16 px. Tab bar muncul di HP, navbar atas mulai tablet.
+- **Alur end-to-end** (dengan Supabase tiruan):
+  - mulai latihan → combobox menampilkan exercise milik user di atas → isian otomatis 77,5 × 5 → tambah set (optimistic "Saving…", timer mulai) → PR tampil;
+  - "Repeat last set" → edit → hapus dengan konfirmasi → Finish → ringkasan;
+  - set yang gagal disimpan menampilkan Retry/Discard;
+  - timer ±15 detik dan stop berfungsi, durasi tersimpan di localStorage.
+- **Mode demo:** banner tampil, dan di semua halaman `/app` hanya tombol "Log out" yang aktif.
+- **NFR8:**
+  - tidak ada gradien, blur, shadow, ring, ungu/pink, `rounded-full`, emoji, atau frasa klise;
+  - tepat 6 ukuran teks;
+  - warna aksen hanya di CTA "Get started/Sign up", highlight combobox, angka 1RM, dan titik PR grafik;
+  - hex di luar `globals.css` hanya `themeColor` metadata dan ikon SVG;
+  - tidak ada unit `vh`.
+
+## v2.5 Item checklist yang belum bisa diverifikasi tanpa database live atau deploy
+
+Migrasi `0002_app.sql` **belum dijalankan** di Supabase remote (sesuai aturan kerja). Semua alur yang memerlukan Supabase Auth atau email asli baru diuji dengan mock, Postgres lokal, atau Supabase tiruan.
+
+| Checklist (PRD-app bagian 13 / PRD v1.1 15.3)                                     | Status sekarang                                                                                                              |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Sign up → email konfirmasi → login → dashboard kosong                             | Logika lolos unit test. Keadaan kosong dashboard sudah dibuat. **Perlu Supabase dan email asli.**                            |
+| Email terdaftar menghasilkan pesan yang sama dengan email baru                    | Lolos unit test. Perlu dicek ulang di Supabase asli.                                                                         |
+| Lupa password → email → reset → login dengan password baru                        | Logika dan callback lolos unit test. **Perlu email asli.**                                                                   |
+| Mulai sesi, tambah set dari HP, rest timer bergetar/berbunyi, finish, ringkasan   | Alur lolos di browser emulasi. **Getar dan bunyi perlu HP fisik.**                                                           |
+| Tidak bisa membuat sesi aktif kedua                                               | Lolos di Postgres lokal (unique index) dan unit test (aksi membuka sesi yang ada).                                           |
+| PR terdeteksi benar di ringkasan dan halaman progres                              | Lolos di Postgres lokal (view) dan di UI dengan Supabase tiruan.                                                             |
+| Grafik progres benar di HP, tablet, desktop                                       | Lolos di emulasi. Perlu dicek di perangkat fisik.                                                                            |
+| User A tidak bisa membaca/mengubah sesi user B (UI 404 dan REST API langsung)     | RLS lolos di Postgres lokal. 404 lolos unit test. **Perlu dicek dengan dua akun asli dan JWT di REST API.**                  |
+| Akun demo: tombol nonaktif; insert lewat REST dengan JWT demo ditolak             | UI lolos. RLS lolos di Postgres lokal. **Perlu dicek di Supabase asli.**                                                     |
+| Hapus akun menghapus semua sesi dan set                                           | Cascade lolos di Postgres lokal. Aksi lolos unit test. **Perlu dicek di Supabase asli.**                                     |
+| Admin hanya melihat agregat, tidak bisa membaca `workout_sessions`/`workout_sets` | Lolos di Postgres lokal. Perlu dicek dengan akun admin asli.                                                                 |
+| Waitlist tidak ada di mana pun (UI, API, admin, database)                         | UI, API, dan admin **lolos** (kode dan browser). Di database baru hilang setelah `0002` dijalankan.                          |
+| Landing tidak mengklaim fitur yang tidak ada                                      | **Lolos.**                                                                                                                   |
+| Lighthouse ≥ 90                                                                   | Lolos lokal. Perlu diukur ulang di Vercel.                                                                                   |
+| Tidak ada auto-zoom di Safari iOS; semua fitur bisa dipakai dengan sentuhan       | Font ≥ 16 px dan target ≥ 44 px terverifikasi. **Perlu iPhone fisik** (keyboard virtual dengan form yang menempel di bawah). |
+| Feedback, rate limit feedback/login admin (v1.1)                                  | Tidak berubah dari v1.1. Tetap lolos unit test.                                                                              |
+
+## v2.6 Langkah manual berurutan
+
+### A. Supabase
+
+1. **Backup** (disarankan): Database → Backups, atau pastikan data feedback tidak penting. `0002` menghapus tabel `waitlist` beserta isinya.
+2. **SQL Editor** → tempel seluruh isi `supabase/migrations/0002_app.sql` → Run. Hasilnya harus "Success".
+3. Verifikasi dengan anon key, misalnya `curl` ke `/rest/v1/rpc/get_total_sets_logged` (hasilnya angka), lalu insert ke `/rest/v1/workout_sets` dengan anon key (harus ditolak `42501`).
+4. **Authentication → Sign In / Providers → Email**: nyalakan **Allow new users to sign up** dan pastikan **Confirm email** aktif. (Di v1.1 sign-up dimatikan; v2.0 menyalakannya.)
+5. **Authentication → URL Configuration**:
+   - Site URL = URL Vercel (setelah deploy; sementara `http://localhost:3000`).
+   - Redirect URLs: `http://localhost:3000/auth/callback` dan `https://<domain-vercel>/auth/callback`.
+6. (Disarankan) **Authentication → SMTP Settings**: pasang SMTP sendiri, karena email bawaan Supabase dibatasi beberapa email per jam.
+7. (Opsional) **Authentication → Email Templates**: ganti link "Confirm signup" dan "Reset password" ke bentuk `token_hash` yang tertulis di README, supaya link bisa dibuka dari perangkat lain.
+8. **Akun demo**:
+   - Authentication → Users → Add user (email demo, password kuat, centang **Auto Confirm User**) → salin UUID.
+   - Buka `supabase/seed/demo.sql`, ganti `00000000-0000-0000-0000-000000000000` dengan UUID tersebut, lalu jalankan di SQL Editor. Harus muncul NOTICE "Demo data: 24 workouts, 368 sets."
+   - Jangan commit file seed yang sudah berisi UUID asli. Cukup ganti UUID di SQL Editor saja.
+9. **Admin**: baris admin dari v1.1 tetap berlaku, dan profilnya otomatis dibuat oleh backfill. Untuk admin baru: `insert into public.admins (user_id) select id from auth.users where email = '...';`
+
+### B. Lokal
+
+10. Tambahkan ke `.env.local`: `NEXT_PUBLIC_SITE_URL=http://localhost:3000`, `DEMO_USER_EMAIL=...`, `DEMO_USER_PASSWORD=...`.
+11. `npm run dev`, lalu coba:
+    - sign up dengan email asli → klik link konfirmasi → dashboard kosong;
+    - mulai latihan di HP (atau lewat devtools) → finish → riwayat dan grafik;
+    - "Try the demo";
+    - lupa password;
+    - hapus akun tes.
+
+### C. Vercel
+
+12. Push ke GitHub (`git push -u origin main`). CI menjalankan lint, test, dan job `database`.
+13. Vercel → Add New → Project → import repo.
+14. **Settings → Environment Variables**, untuk Production (dan Preview jika perlu):
+    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    - `NEXT_PUBLIC_SITE_URL=https://<domain-vercel>`
+    - `SUPABASE_SERVICE_ROLE_KEY`, `RATE_LIMIT_SALT`, `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` (semuanya server-only, tanpa awalan `NEXT_PUBLIC_`)
+15. Deploy. Lalu perbarui **Site URL** dan **Redirect URLs** di Supabase (langkah 5) dengan domain final, dan redeploy jika `NEXT_PUBLIC_SITE_URL` berubah.
+16. Jalankan checklist v2.5 di URL produksi, terutama:
+    - dua akun asli untuk uji isolasi data (UI dan REST dengan JWT);
+    - insert lewat REST dengan JWT demo;
+    - getar dan bunyi rest timer serta keyboard virtual di iPhone dan Android;
+    - Lighthouse di URL Vercel.
+17. Isi link demo dan skor Lighthouse produksi di README.

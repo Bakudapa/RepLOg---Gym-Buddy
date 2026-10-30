@@ -135,14 +135,6 @@ export function ProgressChart({
                 </text>
               );
             })}
-            <text
-              x={0}
-              y={layout.plot.top - 2}
-              className="fill-muted text-xs"
-              dominantBaseline="hanging"
-            >
-              kg
-            </text>
           </svg>
         ) : null}
       </div>
@@ -153,7 +145,7 @@ export function ProgressChart({
           </svg>
           New estimated 1RM record
         </span>
-        <span>Best estimated 1RM per session (Epley).</span>
+        <span>Best estimated 1RM per session, in kg (Epley).</span>
       </figcaption>
 
       <details className="mt-4">

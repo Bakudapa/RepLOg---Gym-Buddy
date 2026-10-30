@@ -37,7 +37,7 @@ export function AuthLink({ href, children }: { href: string; children: ReactNode
   return (
     <Link
       href={href}
-      className="inline-flex min-h-11 items-center font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
+      className="inline-flex min-h-11 min-w-11 items-center justify-center font-medium text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
     >
       {children}
     </Link>

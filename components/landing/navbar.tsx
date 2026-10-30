@@ -60,7 +60,10 @@ export function Navbar() {
           <ul className="flex items-center">
             {links.map((link) => (
               <li key={link.href}>
-                <a href={link.href} className={`${linkClass} text-sm`}>
+                <a
+                  href={link.href}
+                  className={`${linkClass} min-w-11 justify-center text-sm`}
+                >
                   {link.label}
                 </a>
               </li>
@@ -68,7 +71,7 @@ export function Navbar() {
             <li>
               <button
                 type="button"
-                className={`${linkClass} text-sm`}
+                className={`${linkClass} min-w-11 justify-center text-sm`}
                 onClick={(event) => openFeedback(event.currentTarget)}
               >
                 Feedback
@@ -76,7 +79,7 @@ export function Navbar() {
             </li>
           </ul>
           <ThemeToggle />
-          <Link href="/login" className={`${linkClass} text-sm`}>
+          <Link href="/login" className={`${linkClass} min-w-11 justify-center text-sm`}>
             Log in
           </Link>
           <Link href="/signup" className={buttonClass("primary", "ml-1 text-sm")}>

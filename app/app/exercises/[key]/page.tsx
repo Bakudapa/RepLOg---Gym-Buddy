@@ -121,7 +121,7 @@ export default async function ExercisePage(props: PageProps<"/app/exercises/[key
                 }
                 aria-current={option === range ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-11 items-center rounded-sm px-3 text-sm font-medium transition-colors duration-200",
+                  "inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm px-3 text-sm font-medium transition-colors duration-200",
                   option === range ? "bg-fg text-bg" : "text-fg hover:bg-surface",
                 )}
               >
