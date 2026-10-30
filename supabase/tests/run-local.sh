@@ -12,3 +12,6 @@ for _ in $(seq 1 30); do psql -h localhost -p "$PORT" -U postgres -c "select 1" 
 psql -h localhost -p "$PORT" -U postgres -q -f supabase/tests/supabase-stub.sql
 psql -h localhost -p "$PORT" -U postgres -q -v ON_ERROR_STOP=1 -f supabase/migrations/0001_init.sql
 psql -h localhost -p "$PORT" -U postgres -At -f supabase/tests/rls-checks.sql
+echo "--- 0002_app.sql"
+psql -h localhost -p "$PORT" -U postgres -q -v ON_ERROR_STOP=1 -f supabase/migrations/0002_app.sql
+psql -h localhost -p "$PORT" -U postgres -q -At -v ON_ERROR_STOP=1 -f supabase/tests/app-checks.sql

@@ -2,16 +2,16 @@
 
 Tanggal: 30 Oktober 2026. Semua fase (0–8) di PRD bagian 16 sudah dikerjakan. Setiap fase punya commit sendiri di branch `main`.
 
-| Commit            | Fase                        |
-| ----------------- | --------------------------- |
-| `a224ee3`         | 0 — Setup                   |
-| `769f50f`         | 1 — Layout statis           |
-| `9a05f9c`         | 2 — Kalkulator              |
-| `7e30ee9`         | 3 — Interaksi client        |
-| `dbfaec1`         | 4 — Database                |
-| `84d281f`         | 5 — Waitlist                |
-| `1bcb632`         | 6 — Feedback                |
-| `d322df1`         | 7 — Admin                   |
+| Commit    | Fase                        |
+| --------- | --------------------------- |
+| `a224ee3` | 0 — Setup                   |
+| `769f50f` | 1 — Layout statis           |
+| `9a05f9c` | 2 — Kalkulator              |
+| `7e30ee9` | 3 — Interaksi client        |
+| `dbfaec1` | 4 — Database                |
+| `84d281f` | 5 — Waitlist                |
+| `1bcb632` | 6 — Feedback                |
+| `d322df1` | 7 — Admin                   |
 | `969a328` | 8 — Polishing + laporan ini |
 
 ---
