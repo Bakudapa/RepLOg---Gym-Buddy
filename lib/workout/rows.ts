@@ -14,7 +14,11 @@ export function toLoggedSet(row: SetRow | RecordRow): LoggedSet {
     reps: row.reps,
     performedAt: row.performed_at,
     ...("is_e1rm_pr" in row
-      ? { isE1rmPr: row.is_e1rm_pr, isWeightPr: row.is_weight_pr }
+      ? {
+          e1rm: Number(row.e1rm),
+          isE1rmPr: row.is_e1rm_pr,
+          isWeightPr: row.is_weight_pr,
+        }
       : {}),
   };
 }

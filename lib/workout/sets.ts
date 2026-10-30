@@ -7,6 +7,8 @@ export type LoggedSet = {
   weightKg: number;
   reps: number;
   performedAt: string;
+  /** Epley estimate from the database (records view only). */
+  e1rm?: number;
   isE1rmPr?: boolean;
   isWeightPr?: boolean;
 };
