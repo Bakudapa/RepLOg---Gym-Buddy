@@ -1,1 +1,170 @@
 @import "tailwindcss";
+
+/* Class-based dark mode (FR12). The class is set on <html> by the inline theme script. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens (NFR8). Components only use these tokens; Tailwind's default
+ * palette, type scale, radii, and shadows are reset so nothing outside the
+ * system can sneak in.
+ */
+:root {
+  color-scheme: light;
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --fg: #111111;
+  --muted: #5c5c59;
+  --line: #e4e4e0;
+  --line-strong: #8a8a85;
+  --accent: #c2410c;
+  --accent-hover: #a8380a;
+  --accent-fg: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #0f0f0f;
+  --surface: #171717;
+  --fg: #ececea;
+  --muted: #a1a19c;
+  --line: #262626;
+  --line-strong: #75756f;
+  --accent: #e8590c;
+  --accent-hover: #f2702a;
+  --accent-fg: #0f0f0f;
+}
+
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --blur-*: initial;
+  --breakpoint-sm: initial;
+  --breakpoint-xl: initial;
+  --breakpoint-2xl: initial;
+
+  /* Six type sizes, no more (NFR8). */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 2.125rem;
+  --text-display: clamp(2.25rem, 1.75rem + 2vw, 3.25rem);
+  --text-display--line-height: 1.1;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background-color: var(--fg);
+    color: var(--bg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 2px;
+  }
+
+  /* Inputs at 16px or larger so iOS Safari does not zoom in (NFR2). */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem);
+  }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+
+  @media (width >= 48rem) {
+    padding-left: max(2rem, env(safe-area-inset-left));
+    padding-right: max(2rem, env(safe-area-inset-right));
+  }
+}
+
+/* Numbers in the "log book" voice: mono + tabular figures (NFR8). */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scroll reveal (NFR7): fade + 8px slide, 200ms. Disabled for reduced motion. */
+@layer components {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js .reveal:not(.is-visible) {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .js .reveal {
+      transition:
+        opacity 250ms var(--ease-standard),
+        transform 250ms var(--ease-standard);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
