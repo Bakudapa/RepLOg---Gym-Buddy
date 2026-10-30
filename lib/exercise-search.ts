@@ -8,6 +8,8 @@ export type Suggestion = {
   match?: { start: number; end: number };
   /** Set when the query matched an alias instead of the name. */
   alias?: { text: string; start: number; end: number };
+  /** The user has logged this exercise before. */
+  recent?: boolean;
 };
 
 type Ranked = { suggestion: Suggestion; rank: number; order: number };
@@ -73,7 +75,52 @@ export function searchExercises(
 }
 
 /** True when the query equals an exercise name exactly (ignoring case and outer spaces). */
-export function hasExactMatch(query: string, exercises: Exercise[] = EXERCISES): boolean {
+export function hasExactMatch(
+  query: string,
+  exercises: Exercise[] = EXERCISES,
+  recent: string[] = [],
+): boolean {
   const q = query.trim().toLowerCase();
-  return q !== "" && exercises.some((exercise) => exercise.name.toLowerCase() === q);
+  return (
+    q !== "" &&
+    (exercises.some((exercise) => exercise.name.toLowerCase() === q) ||
+      recent.some((name) => name.trim().toLowerCase() === q))
+  );
+}
+
+/**
+ * Combobox search that also offers exercises the user has logged before (FR24).
+ * Matching recent names come first (prefix matches before others), then the
+ * built-in list without duplicates. An empty query lists recent exercises, then
+ * the popular ones.
+ */
+export function searchWithRecent(
+  query: string,
+  recent: string[],
+  limit: number = MAX_SUGGESTIONS,
+): Suggestion[] {
+  const q = query.trim().toLowerCase();
+  const seen = new Set<string>();
+  const unique = recent.filter((name) => {
+    const key = name.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const recentMatches: Suggestion[] = unique
+    .map((name, order) => ({ name, order, index: q ? name.toLowerCase().indexOf(q) : 0 }))
+    .filter((item) => item.index !== -1)
+    .sort((a, b) => Number(a.index !== 0) - Number(b.index !== 0) || a.order - b.order)
+    .map((item) => ({
+      name: item.name,
+      recent: true,
+      ...(q ? { match: { start: item.index, end: item.index + q.length } } : {}),
+    }));
+
+  const builtIn = searchExercises(query, EXERCISES, limit).filter(
+    (suggestion) => !seen.has(suggestion.name.toLowerCase()),
+  );
+
+  return [...recentMatches, ...builtIn].slice(0, limit);
 }

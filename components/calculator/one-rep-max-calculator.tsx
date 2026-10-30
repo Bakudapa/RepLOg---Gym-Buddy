@@ -3,6 +3,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { describedBy, Field, inputClass } from "@/components/ui/field";
+import { parseDecimal } from "@/lib/number";
 import { estimateOneRepMax, formatKg, percentageTable } from "@/lib/one-rep-max";
 import {
   fieldErrors,
@@ -16,10 +17,6 @@ import { useHistory } from "./use-history";
 type FieldName = keyof OneRepMaxInput;
 type Result = OneRepMaxInput & { oneRepMax: number };
 
-/** Empty strings become NaN so the schema reports them as missing numbers. */
-const toNumber = (value: string) =>
-  value.trim() === "" ? Number.NaN : Number(value.replace(",", "."));
-
 export function OneRepMaxCalculator() {
   const id = useId();
   const ids = { exercise: `${id}-exercise`, weight: `${id}-weight`, reps: `${id}-reps` };
@@ -30,8 +27,8 @@ export function OneRepMaxCalculator() {
 
   const parsed = oneRepMaxSchema.safeParse({
     exercise: values.exercise,
-    weight: toNumber(values.weight),
-    reps: toNumber(values.reps),
+    weight: parseDecimal(values.weight),
+    reps: parseDecimal(values.reps),
   });
   const errors = parsed.success ? {} : fieldErrors<FieldName>(parsed.error);
   const visibleError = (field: FieldName) => (touched[field] ? errors[field] : undefined);

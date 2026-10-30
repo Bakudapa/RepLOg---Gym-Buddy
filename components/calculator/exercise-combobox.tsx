@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { hasExactMatch, searchExercises, type Suggestion } from "@/lib/exercise-search";
+import {
+  hasExactMatch,
+  searchExercises,
+  searchWithRecent,
+  type Suggestion,
+} from "@/lib/exercise-search";
+import { EXERCISES } from "@/lib/exercises";
 import { cn } from "@/lib/cn";
 import { inputClass } from "@/components/ui/field";
 
@@ -16,6 +22,16 @@ type ExerciseComboboxProps = {
   onBlur?: () => void;
   invalid?: boolean;
   describedBy?: string;
+  /** Exercises the user logged before; suggested first (FR24). */
+  recent?: string[];
+  /** Called when a suggestion is picked (not on every keystroke). */
+  onSelect?: (value: string) => void;
+  /**
+   * "top" opens the list above the field, for forms pinned to the bottom of the
+   * screen; "top-mobile" does that on phones only and opens below from tablet up.
+   */
+  placement?: "top" | "bottom" | "top-mobile";
+  disabled?: boolean;
 };
 
 function Highlight({ text, start, end }: { text: string; start: number; end: number }) {
@@ -41,6 +57,10 @@ export function ExerciseCombobox({
   onBlur,
   invalid,
   describedBy,
+  recent,
+  onSelect,
+  placement = "bottom",
+  disabled,
 }: ExerciseComboboxProps) {
   const listId = useId();
   const optionId = (index: number) => `${listId}-option-${index}`;
@@ -51,16 +71,17 @@ export function ExerciseCombobox({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const options = useMemo<Option[]>(() => {
-    const list: Option[] = searchExercises(value).map((suggestion) => ({
+    const suggestions = recent ? searchWithRecent(value, recent) : searchExercises(value);
+    const list: Option[] = suggestions.map((suggestion) => ({
       kind: "exercise",
       value: suggestion.name,
       suggestion,
     }));
     const typed = value.trim();
-    if (typed !== "" && !hasExactMatch(typed))
+    if (typed !== "" && !hasExactMatch(typed, EXERCISES, recent))
       list.push({ kind: "custom", value: typed });
     return list;
-  }, [value]);
+  }, [value, recent]);
 
   const expanded = open && options.length > 0;
 
@@ -89,6 +110,7 @@ export function ExerciseCombobox({
 
   function select(option: Option) {
     onChange(option.value);
+    onSelect?.(option.value);
     setOpen(false);
     setActiveIndex(-1);
   }
@@ -134,7 +156,7 @@ export function ExerciseCombobox({
     openList();
     // On touch devices, bring the field near the top so the virtual keyboard
     // does not cover the suggestions that open below it.
-    if (window.matchMedia("(pointer: coarse)").matches) {
+    if (placement === "bottom" && window.matchMedia("(pointer: coarse)").matches) {
       window.setTimeout(() => inputRef.current?.scrollIntoView({ block: "start" }), 300);
     }
   }
@@ -159,6 +181,7 @@ export function ExerciseCombobox({
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}
         value={value}
+        disabled={disabled}
         placeholder="e.g. Bench Press"
         className={cn(inputClass(invalid), "scroll-mt-24")}
         onChange={(event) => {
@@ -177,14 +200,20 @@ export function ExerciseCombobox({
         role="listbox"
         aria-label={value.trim() === "" ? "Popular exercises" : "Suggested exercises"}
         hidden={!expanded}
-        className="absolute inset-x-0 top-full z-20 mt-1 max-h-[min(20rem,45dvh)] overflow-y-auto overscroll-contain rounded-md border border-line-strong bg-surface py-1"
+        className={cn(
+          "absolute inset-x-0 z-20 max-h-[min(20rem,45dvh)] overflow-y-auto overscroll-contain rounded-md border border-line-strong bg-surface py-1",
+          placement === "top" && "bottom-full mb-1",
+          placement === "bottom" && "top-full mt-1",
+          placement === "top-mobile" &&
+            "bottom-full mb-1 md:top-full md:bottom-auto md:mt-1 md:mb-0",
+        )}
       >
         {value.trim() === "" ? (
           <li
             role="presentation"
             className="px-3 pt-1 pb-2 text-xs font-medium text-muted"
           >
-            Popular
+            {recent?.length ? "Recent and popular" : "Popular"}
           </li>
         ) : null}
         {options.map((option, index) => (
@@ -225,6 +254,9 @@ export function ExerciseCombobox({
                     option.value
                   )}
                 </span>
+                {option.suggestion.recent ? (
+                  <span className="text-xs text-muted">Recent</span>
+                ) : null}
                 {option.suggestion.alias ? (
                   <span className="text-sm text-muted">
                     <Highlight

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasExactMatch, searchExercises } from "@/lib/exercise-search";
+import { hasExactMatch, searchExercises, searchWithRecent } from "@/lib/exercise-search";
 import { EXERCISES, type Exercise } from "@/lib/exercises";
 
 const names = (query: string, list?: Exercise[]) =>
@@ -90,5 +90,36 @@ describe("hasExactMatch", () => {
     expect(hasExactMatch("  bench press ")).toBe(true);
     expect(hasExactMatch("bench")).toBe(false);
     expect(hasExactMatch("")).toBe(false);
+  });
+});
+
+describe("searchWithRecent", () => {
+  const recent = ["Landmine Press", "Bench Press", "landmine press", "Zercher Squat"];
+
+  it("lists recent exercises first when the field is empty", () => {
+    const names = searchWithRecent("", recent).map((item) => item.name);
+    expect(names.slice(0, 3)).toEqual(["Landmine Press", "Bench Press", "Zercher Squat"]);
+    expect(names).toContain("Squat");
+    expect(names.length).toBeLessThanOrEqual(8);
+  });
+
+  it("puts matching recent names above built-in ones, without duplicates", () => {
+    const results = searchWithRecent("press", recent);
+    expect(results.slice(0, 2).map((item) => [item.name, item.recent])).toEqual([
+      ["Landmine Press", true],
+      ["Bench Press", true],
+    ]);
+    expect(
+      results.filter((item) => item.name.toLowerCase() === "bench press"),
+    ).toHaveLength(1);
+    expect(results[0].match).toEqual({ start: 9, end: 14 });
+  });
+
+  it("ranks recent prefix matches before other recent matches", () => {
+    expect(searchWithRecent("z", recent)[0].name).toBe("Zercher Squat");
+  });
+
+  it("counts custom recent names as exact matches", () => {
+    expect(hasExactMatch("zercher squat", undefined, recent)).toBe(true);
   });
 });
